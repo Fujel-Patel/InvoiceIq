@@ -1,0 +1,113 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# PyCharm
+*.iml
+.idea/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Node / Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+.eslintcache
+
+# Next.js
+.next/
+out/
+dist/
+.vercel
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+*.sql
+
+# OS
+.DS_Store
+Thumbs.db
+.Thumbs.db
+.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+.vscode/settings.json
+
+# Project specific
+/uploads/
+/temp/
+/tmp/
+.cache/
+
+# Alembic versions (if needed)
+alembic/versions/__pycache__/
