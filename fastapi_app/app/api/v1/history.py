@@ -1,26 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
-from ...models.invoice import HistoryItem
-from ...services.db import DatabaseService
+
+from fastapi_app.app.models.invoice import HistoryItem
+from fastapi_app.app.services.db import DatabaseService
+from fastapi_app.app.utils.auth import get_current_user
 
 router = APIRouter()
-security = HTTPBearer()
-
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> str:
-    """
-    Extract user ID from JWT token.
-    In a real implementation, you would verify the token and extract user info.
-    For now, we'll return a mock user ID.
-    """
-    # TODO: Implement proper JWT verification
-    # For development, returning a fixed user ID
-    return "dev-user-id"
 
 
 @router.get("/history", response_model=List[HistoryItem])

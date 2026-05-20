@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 
 
@@ -9,10 +9,13 @@ class Settings(BaseSettings):
     # API Settings
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "InvoiceIQ"
+    BACKEND_PORT: int = Field(default=8000, env="BACKEND_PORT")
+    BACKEND_HOST: str = Field(default="0.0.0.0", env="BACKEND_HOST")
 
     # Security
     SECRET_KEY: str = Field(..., env="SECRET_KEY")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
+    IS_DEVELOPMENT: bool = Field(default=True, env="IS_DEVELOPMENT")
 
     # LLM Provider Settings
     # Anthropic (Claude)
@@ -42,6 +45,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = Field(..., env="SUPABASE_URL")
     SUPABASE_KEY: str = Field(..., env="SUPABASE_KEY")  # Using anon key for client-side operations
     SUPABASE_SERVICE_ROLE_KEY: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
+    SUPABASE_JWT_SECRET: str = Field(..., env="SUPABASE_JWT_SECRET")
 
     # File Upload
     MAX_FILE_SIZE_MB: int = Field(default=10, env="MAX_FILE_SIZE_MB")
@@ -53,9 +57,7 @@ class Settings(BaseSettings):
         """Maximum upload size in bytes."""
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 settings = Settings()

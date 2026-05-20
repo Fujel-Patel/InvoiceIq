@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-"""Utility functions for file validation."""
+from __future__ import annotations
 
 from typing import List
+
+"""Utility functions for file validation."""
 
 # Allowed MIME types for file uploads
 ALLOWED_TYPES: List[str] = ["image/jpeg", "image/png", "application/pdf"]

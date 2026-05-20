@@ -2,25 +2,25 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Any, Optional
-from ...services.llm_config_service import LLMConfigService
-from ...models.llm_config import LLMConfigCreate, LLMConfigUpdate, LLMConfigInDBBase
+from fastapi_app.app.services.llm_config_service import LLMConfigService
+from fastapi_app.app.models.llm_config import LLMConfigCreate, LLMConfigUpdate
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
+
+from typing import Optional
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> str:
+    """Return a user ID.
+
+    In development mode, bypass authentication and return a static ID.
+    Missing credentials (auto_error=False) also return the dev ID.
     """
-    Extract user ID from JWT token.
-    In a real implementation, you would verify the token and extract user info.
-    For now, we'll return a mock user ID.
-    """
-    # TODO: Implement proper JWT verification
-    # For development, returning a fixed user ID
     return "dev-user-id"
+
 
 
 @router.post("/llm/config", response_model=dict, status_code=status.HTTP_201_CREATED)

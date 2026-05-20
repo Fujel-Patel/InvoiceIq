@@ -1,48 +1,26 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status as status_code
 
-from ...services.file_handler import (
-    validate_file,
-    convert_to_base64,
-    get_media_type,
-    FileHandler
-)
-from ...services.llm import ClaudeService
-from ...services.parser import (
-    parse_llm_response,
-    determine_status
-)
-from ...models.invoice import ExtractedInvoice
-from ...services.db import DatabaseService
-from ...core.config import settings
-from ...utils.validators import check_file_type, check_file_size
+from fastapi_app.app.core.config import settings
+from fastapi_app.app.models.invoice import ExtractedInvoice
+from fastapi_app.app.schemas.extraction import ExtractionResponse
+from fastapi_app.app.services.file_handler import FileHandler, validate_file, convert_to_base64, get_media_type
+from fastapi_app.app.services.llm import ClaudeService
+from fastapi_app.app.services.parser import parse_llm_response, determine_status
+from fastapi_app.app.services.db import DatabaseService
+from fastapi_app.app.utils.auth import get_current_user
+from fastapi_app.app.utils.validators import check_file_size, check_file_type
 
 router = APIRouter()
-security = HTTPBearer()
 
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> str:
-    """
-    Extract user ID from JWT token.
-    In a real implementation, you would verify the token and extract user info.
-    For now, we'll return a mock user ID.
-    """
-    # TODO: Implement proper JWT verification
-    # For development, returning a fixed user ID
-    return "dev-user-id"
-
-
-@router.post("/extract/upload", status_code=status.HTTP_201_CREATED)
+@router.post("/extract/upload", status_code=status_code.HTTP_201_CREATED)
 async def upload_and_extract(
     file: UploadFile = File(...),
-    file_handler: FileHandler = Depends(),
+    file_handler: FileHandler = Depends(FileHandler),
     claude_service: ClaudeService = Depends(),
     db_service: DatabaseService = Depends(),
     current_user: str = Depends(get_current_user)
@@ -68,11 +46,12 @@ async def upload_and_extract(
 
     # Read file content for size and type validation
     content = await file.read()
+    await file.seek(0)
 
     # Validate file size using utility function
     if not check_file_size(len(content)):
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status_code.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds maximum allowed size of {settings.MAX_UPLOAD_SIZE} bytes"
         )
 
@@ -83,7 +62,7 @@ async def upload_and_extract(
     # optionally check content-type if provided
     if file.content_type and not check_file_type(file.content_type):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status_code.HTTP_400_BAD_REQUEST,
             detail=f"File type {file.content_type} not allowed. Allowed types: {', '.join(settings.ALLOWED_TYPES)}"
         )
 
@@ -104,7 +83,7 @@ async def upload_and_extract(
         validated_data: ExtractedInvoice = parse_llm_response(extraction_result)
 
         # Determine extraction status
-        status = determine_status(validated_data)
+        extraction_status = determine_status(validated_data)
 
         # Generate extraction ID
         extraction_id = str(uuid.uuid4())
@@ -115,25 +94,25 @@ async def upload_and_extract(
             filename=file.filename or "unknown",
             user_id=current_user,
             data=validated_data,
-            status=status
+            status=extraction_status
         )
 
         # Return ExtractionResponse format
         return ExtractionResponse(
-            extraction_id=extraction_record.id,
-            status=status,
+            extraction_id=extraction_record["id"],
+            status=extraction_status,
             data=validated_data,
             raw_text=None  # We don't store the raw text currently
         )
 
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status_code.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e)
         )
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status_code.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred during processing: {str(e)}"
         )
 
@@ -162,19 +141,19 @@ async def get_extraction(
 
     if not extraction_record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status_code.HTTP_404_NOT_FOUND,
             detail=f"Extraction with ID {extraction_id} not found"
         )
 
     # Check if the extraction belongs to the current user
     if extraction_record.get("user_id") != current_user:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status_code.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this extraction"
         )
 
     # Convert the database record to ExtractionResponse format
-    extracted_data = ExtractedInvoice(**extraction_record["extracted_data"])
+    extracted_data = ExtractedInvoice(**extraction_record["full_data"])
 
     return ExtractionResponse(
         extraction_id=extraction_record["id"],
@@ -211,14 +190,14 @@ async def update_extraction(
 
     if not extraction_record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status_code.HTTP_404_NOT_FOUND,
             detail=f"Extraction with ID {extraction_id} not found"
         )
 
     # Check if the extraction belongs to the current user
     if extraction_record.get("user_id") != current_user:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status_code.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this extraction"
         )
 
@@ -227,12 +206,12 @@ async def update_extraction(
 
     if not updated_record:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status_code.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update extraction"
         )
 
     # Convert the updated database record to ExtractionResponse format
-    extracted_data = ExtractedInvoice(**updated_record["extracted_data"])
+    extracted_data = ExtractedInvoice(**updated_record["full_data"])
 
     return ExtractionResponse(
         extraction_id=updated_record["id"],

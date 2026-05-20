@@ -4,11 +4,11 @@ import base64
 import mimetypes
 from typing import Optional
 import uuid
+from loguru import logger
 from fastapi import UploadFile, HTTPException, status
 from pathlib import Path
 
 from ..core.config import settings
-from ..utils.validators import check_file_type, check_file_size
 
 
 def validate_file(file: UploadFile) -> None:
@@ -29,10 +29,18 @@ def validate_file(file: UploadFile) -> None:
 
     # Check file extension
     file_extension = Path(file.filename).suffix.lower()
-    if file_extension not in settings.ALLOWED_TYPES:
+    extension_to_mime = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".pdf": "application/pdf",
+    }
+    file_mime = extension_to_mime.get(file_extension)
+    logger.debug(f"DEBUG: filename={file.filename}, extension={file_extension}, mime={file_mime}, allowed={settings.ALLOWED_TYPES}")
+    if not file_mime or file_mime not in settings.ALLOWED_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File type {file_extension} not allowed. Allowed types: {', '.join(settings.ALLOWED_TYPES)}"
+            detail=f"File type {file_extension} (resolved to {file_mime}) not allowed. Allowed types: {', '.join(settings.ALLOWED_TYPES)}"
         )
 
 

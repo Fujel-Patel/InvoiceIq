@@ -1,85 +1,94 @@
 # Folder Structure
 
 InvoiceIQ/
-├── fastapi_app/                              # Backend FastAPI Application
-│   ├── app/                                  # Main Application Package
+├── fastapi_app/
+│   ├── app/
 │   │   ├── __init__.py
-│   │   ├── main.py                           # FastAPI app entry point
-│   │   ├── core/                             # Core configuration and utilities
+│   │   ├── main.py                         # FastAPI app entry point
+│   │   ├── core/
 │   │   │   ├── __init__.py
-│   │   │   ├── config.py                     # Application settings
-│   │   │   └── database.py                   # Database setup and session management
-│   │   ├── db/                               # Database models and base classes
+│   │   │   ├── config.py                   # Application settings
+│   │   │   └── database.py                 # DB engine & session
+│   │   ├── db/
 │   │   │   ├── __init__.py
-│   │   │   └── base.py                       # Base class for declarative models
-│   │   ├── models/                           # Pydantic models for data validation
+│   │   │   ├── setup.py                   # Supabase table init script
+│   │   │   └── verify_db.py                # DB verification helper
+│   │   ├── models/
 │   │   │   ├── __init__.py
-│   │   │   └── invoice.py                    # Invoice-related Pydantic models
-│   │   ├── schemas/                          # Request/response validation schemas
-│   │   │   └── __init__.py
-│   │   ├── services/                         # Business logic services
+│   │   │   ├── invoice.py                  # Pydantic models (LineItem, ExtractedInvoice, etc.)
+│   │   │   ├── extraction.py               # SQLAlchemy extraction model
+│   │   │   └── llm_config.py               # LLM configuration model
+│   │   ├── schemas/
 │   │   │   ├── __init__.py
-│   │   │   ├── file_handler.py               # File validation and processing
-│   │   │   ├── llm.py                        # Claude API integration
-│   │   │   ├── parser.py                     # LLM response parsing and validation
-│   │   │   └── db.py                         # Database service operations
-│   │   ├── api/                              # API route definitions
+│   │   │   └── extraction.py               # Response schema (ExtractionResponse)
+│   │   ├── services/
 │   │   │   ├── __init__.py
-│   │   │   └── v1/                           # Version 1 API endpoints
+│   │   │   ├── file_handler.py            # File validation & processing
+│   │   │   ├── llm.py                     # Wrapper for provider selection
+│   │   │   ├── llm_interface.py           # Base LLM service & concrete providers
+│   │   │   ├── llm_config_service.py      # Service for LLM config CRUD
+│   │   │   ├── parser.py                  # LLM response parsing & validation
+│   │   │   └── db.py                      # Database service operations
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   └── v1/
 │   │   │       ├── __init__.py
-│   │   │       ├── extract.py                # File upload and data extraction
-│   │   │       ├── history.py                # Extraction history management
-│   │   │       └── export.py                 # Data export (CSV/Excel)
-│   │   ├── tests/                            # Test suite
+│   │   │       ├── extract.py             # POST/GET/PUT extraction endpoints
+│   │   │       ├── history.py             # GET history endpoint
+│   │   │       ├── export.py              # POST export endpoint (CSV/Excel)
+│   │   │       └── llm_config.py          # LLM configuration endpoint
+│   │   ├── utils/
 │   │   │   ├── __init__.py
-│   │   │   ├── api/                          # API endpoint tests
-│   │   │   │   ├── __init__.py
-│   │   │   │   └── test_extract.py
-│   │   │   ├── models/                       # Model validation tests
-│   │   │   │   ├── __init__.py
-│   │   │   │   └── test_invoice.py
-│   │   │   └── services/                     # Service tests
-│   │   │       ├── __init__.py
-│   │   │       └── test_parser.py
-│   │   └── utils/                            # Utility functions
+│   │   │   ├── auth.py                    # JWT validation with dev bypass
+│   │   │   └── validators.py              # File validation helpers
+│   │   └── tests/
 │   │       ├── __init__.py
-│   │       └── validators.py                 # File validation helpers
-│   ├── alembic/                              # Database migration scripts
+│   │       ├── api/
+│   │       │   ├── __init__.py
+│   │       │   └── test_extract.py
+│   │       ├── models/
+│   │       │   ├── __init__.py
+│   │       │   └── test_invoice.py
+│   │       └── services/
+│   │           ├── __init__.py
+│   │           └── test_parser.py
+│   ├── alembic/
 │   │   ├── env.py
 │   │   ├── README
 │   │   ├── versions/
 │   │   │   └── [... migration files ...]
 │   │   └── script.py.mako
-│   ├── requirements.txt                      # Python backend dependencies
-│   └── .venv/                                # Python virtual environment
-├── frontend/                                 # Frontend Next.js Application
-│   ├── app/                                  # Next.js App Router
+│   ├── requirements.txt
+│   └── .venv/
+├── frontend/
+│   ├── app/
 │   │   ├── __init__.py
-│   │   ├── page.tsx                          # Upload page for invoice/receipt files
-│   │   ├── history/                          # History route
+│   │   ├── page.tsx                     # Upload landing page
+│   │   ├── history/
 │   │   │   ├── __init__.py
-│   │   │   └── page.tsx                      # View past extraction history
-│   │   └── result/                           # Result route
+│   │   │   └── page.tsx                 # History view
+│   │   └── result/
 │   │       ├── __init__.py
-│   │       └── page.tsx                      # Display and edit extracted data
-│   ├── components/                           # Reusable UI Components
+│   │       └── page.tsx                 # Result display & edit page
+│   ├── components/
 │   │   ├── __init__.py
-│   │   ├── Uploader.tsx                      # Drag & drop file upload component
-│   │   ├── DataTable.tsx                     # Editable table for displaying data
-│   │   ├── ExportButtons.tsx                 # CSV/Excel export buttons
-│   │   └── ui/                               # UI primitives
+│   │   ├── Uploader.tsx                 # Drag‑and‑drop file upload component
+│   │   ├── DataTable.tsx                # Editable invoice data table
+│   │   ├── ExportButtons.tsx            # CSV/Excel export buttons
+│   │   └── ui/
 │   │       ├── __init__.py
-│   │       └── button.tsx                    # Button component
-│   ├── package.json                          # Frontend dependencies
-│   ├── tsconfig.json                         # TypeScript configuration
-│   ├── tailwind.config.js                    # Tailwind CSS configuration
-│   └── postcss.config.js                     # PostCSS configuration
-├── .env.example                              # Example environment variables
-├── .env                                      # Environment variables (local)
-├── CLAUDE.md                                 # Claude Code guidance
-├── FOLDER_STRUCTURE.md                       # This file
-├── IMPLEMENTATION_SUMMARY.md                 # Summary of today's implementation
-├── requirements.txt                          # Python dependencies (root level)
-└── scripts/                                  # Utility scripts
+│   │       └── button.tsx               # UI button primitive
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── tailwind.config.js
+│   └── postcss.config.js
+├── .env.example
+├── .env
+├── CLAUDE.md
+├── FOLDER_STRUCTURE.md
+├── IMPLEMENTATION_SUMMARY.md
+├── TASK_COMPLETION_SUMMARY.md
+├── requirements.txt
+└── scripts/
     ├── __init__.py
-    └── download_models.py                    # Script to download AI models
+    └── download_models.py               # Script to download AI models

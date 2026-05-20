@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import json
-import re
-from typing import List, Optional
-from datetime import datetime
-from ..models.invoice import LineItem, ExtractedInvoice
+from ..models.invoice import ExtractedInvoice
 
 
 def parse_llm_response(raw_dict: dict) -> ExtractedInvoice:

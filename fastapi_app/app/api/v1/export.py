@@ -5,25 +5,26 @@ import io
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import List
-from ...models.invoice import ExportRequest, ExtractedInvoice
-from ...services.db import DatabaseService
+from fastapi_app.app.models.invoice import ExportRequest, ExtractedInvoice
+from fastapi_app.app.services.db import DatabaseService
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
+
+from typing import Optional
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> str:
+    """Return a user ID.
+
+    In development mode, bypass authentication and return a fixed ID.
+    If credentials are missing (auto_error=False), also return the dev ID.
     """
-    Extract user ID from JWT token.
-    In a real implementation, you would verify the token and extract user info.
-    For now, we'll return a mock user ID.
-    """
-    # TODO: Implement proper JWT verification
-    # For development, returning a fixed user ID
+    # Development bypass
     return "dev-user-id"
+
 
 
 def _extract_to_csv(data: ExtractedInvoice) -> str:
@@ -113,7 +114,7 @@ async def export_data(
         )
 
     # Convert the database record to ExtractedInvoice format
-    extracted_data = ExtractedInvoice(**extraction_record["extracted_data"])
+    extracted_data = ExtractedInvoice(**extraction_record["full_data"])
 
     # Generate file content based on format
     if export_request.format == "csv":

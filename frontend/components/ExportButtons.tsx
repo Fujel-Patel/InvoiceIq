@@ -1,99 +1,88 @@
-'use client';
+"use client";
 
-interface ExtractionData {
-  vendor_name: string;
-  date: string;
-  line_items: Array<{
-    description: string;
-    quantity: number;
-    unit_price: number;
-    total: number;
-  }>;
-  tax: number;
-  total_amount: number;
-  currency: string;
-}
+import { useState } from "react";
+import { motion } from "motion/react";
+import { toast } from "sonner";
+import { FileText, FileSpreadsheet, Loader2 } from "lucide-react";
+import { exportExtraction } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface ExportButtonsProps {
-  data: ExtractionData;
+  extractionId: string;
 }
 
-export default function ExportButtons({ data }: ExportButtonsProps) {
-  const handleExportCSV = () => {
-    // Create CSV content
-    const headers = ['Description', 'Quantity', 'Unit Price', 'Total'];
-    const rows = data.line_items.map(item => [
-      item.description,
-      item.quantity,
-      `${data.currency} ${item.unit_price.toFixed(2)}`,
-      `${data.currency} ${item.total.toFixed(2)}`
-    ]);
+export default function ExportButtons({ extractionId }: ExportButtonsProps) {
+  const [csvLoading, setCsvLoading] = useState(false);
+  const [excelLoading, setExcelLoading] = useState(false);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(',')),
-      '', // Empty row
-      ['Subtotal', '', '', `${data.currency} ${data.line_items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}`].join(','),
-      ['Tax', '', '', `${data.currency} ${data.tax.toFixed(2)}`].join(','),
-      ['Total Amount', '', '', `${data.currency} ${data.total_amount.toFixed(2)}`].join(',')
-    ].join('\n');
+  const handleExport = async (format: "csv" | "excel") => {
+    if (format === "csv") setCsvLoading(true);
+    else setExcelLoading(true);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `invoice_${data.date.replace(/-/g, '')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await exportExtraction(extractionId, format);
+      toast.success(`${format.toUpperCase()} downloaded!`);
+    } catch (error) {
+      toast.error("Export failed. Try again.");
+    } finally {
+      if (format === "csv") setCsvLoading(false);
+      else setExcelLoading(false);
+    }
   };
 
-  const handleExportExcel = () => {
-    // For simplicity, we'll create a CSV and treat it as Excel
-    // In a real app, you might use a library like SheetJS or xlsx
-    const headers = ['Description', 'Quantity', 'Unit Price', 'Total'];
-    const rows = data.line_items.map(item => [
-      item.description,
-      item.quantity,
-      `${data.currency} ${item.unit_price.toFixed(2)}`,
-      `${data.currency} ${item.total.toFixed(2)}`
-    ]);
-
-    const csvContent = [
-      headers.join('\t'), // Tab-separated for better Excel compatibility
-      ...rows.map(row => row.join('\t')),
-      '', // Empty row
-      ['Subtotal', '', '', `${data.currency} ${data.line_items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}`].join('\t'),
-      ['Tax', '', '', `${data.currency} ${data.tax.toFixed(2)}`].join('\t'),
-      ['Total Amount', '', '', `${data.currency} ${data.total_amount.toFixed(2)}`].join('\t')
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `invoice_${data.date.replace(/-/g, '')}.xlsx`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const isLoading = csvLoading || excelLoading;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:space-x-3 mt-4">
-      <button
-        onClick={handleExportCSV}
-        className="w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Export as CSV
-      </button>
-      <button
-        onClick={handleExportExcel}
-        className="w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-      >
-        Export as Excel
-      </button>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Export Data</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              variant="outline"
+              className="w-full h-auto flex flex-col items-start p-4 gap-1"
+              onClick={() => handleExport("csv")}
+              disabled={isLoading}
+            >
+              <div className="flex items-center gap-2 font-semibold">
+                {csvLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                Export as CSV
+              </div>
+              <span className="text-xs text-muted-foreground">Comma separated values</span>
+            </Button>
+          </motion.div>
+
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              className="w-full h-auto flex flex-col items-start p-4 gap-1"
+              onClick={() => handleExport("excel")}
+              disabled={isLoading}
+            >
+              <div className="flex items-center gap-2 font-semibold">
+                {excelLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4" />
+                )}
+                Export as Excel
+              </div>
+              <span className="text-xs text-muted-foreground">Microsoft Excel format</span>
+            </Button>
+          </motion.div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

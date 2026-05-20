@@ -34,20 +34,31 @@ Implement the following RESTful APIs for InvoiceIQ:
 - ✅ Proper async/await usage throughout
 - ✅ Dependency injection pattern maintained
 
-### Files Modified:
+### Files Created/Modified:
 ```
 fastapi_app/app/
-├── models/invoice.py          # All Pydantic models (centralized)
-├── services/parser.py         # Updated to use centralized models
-├── api/v1/extract.py          # POST/GET/PUT endpoints implemented
-├── api/v1/history.py          # GET history endpoint implemented
-├── api/v1/export.py           # POST export endpoint implemented
-└── services/db.py             # Fixed model imports
-
-Tests/
-├── models/test_invoice.py     # Model validation tests
-├── services/test_parser.py    # Parser functionality tests  
-└── api/test_extract.py        # API integration tests
+├── models/
+│   ├── invoice.py          # Centralized Pydantic models
+│   ├── extraction.py       # SQLAlchemy extraction model
+│   └── llm_config.py       # LLM configuration model
+├── schemas/
+│   └── extraction.py       # ExtractionResponse schema
+├── services/
+│   ├── llm_interface.py   # Base LLM service & provider implementations
+│   ├── llm_config_service.py # Service for LLM config CRUD
+│   ├── parser.py           # Updated to use centralized models
+│   └── db.py               # Fixed model imports
+├── api/v1/
+│   ├── extract.py          # POST/GET/PUT extraction endpoints
+│   ├── history.py          # GET history endpoint
+│   ├── export.py           # POST export endpoint (CSV/Excel)
+│   └── llm_config.py       # LLM configuration endpoint
+├── utils/
+│   └── auth.py            # JWT validation with dev bypass
+└── tests/
+    ├── api/test_extract.py
+    ├── models/test_invoice.py
+    └── services/test_parser.py
 ```
 
 ### Documentation Updated:

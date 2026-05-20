@@ -31,21 +31,21 @@ def setup_database() -> bool:
         # Create extractions table
         """
         CREATE TABLE IF NOT EXISTS extractions (
-          extraction_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id          TEXT,
-          filename         TEXT NOT NULL,
-          status           TEXT NOT NULL DEFAULT 'pending',
-          vendor_name      TEXT,
-          invoice_number   TEXT,
-          invoice_date     TEXT,
-          due_date         TEXT,
-          subtotal         FLOAT,
-          tax              FLOAT,
-          total_amount     FLOAT,
-          currency         TEXT,
-          full_data        JSONB,
-          extracted_at     TIMESTAMPTZ DEFAULT NOW(),
-          updated_at       TIMESTAMPTZ DEFAULT NOW()
+          id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          user_id        TEXT NOT NULL,
+          filename       TEXT NOT NULL,
+          status         TEXT NOT NULL DEFAULT 'pending',
+          vendor_name    TEXT,
+          invoice_number TEXT,
+          invoice_date   TEXT,
+          due_date       TEXT,
+          subtotal       FLOAT,
+          tax            FLOAT,
+          total_amount   FLOAT,
+          currency       TEXT,
+          full_data      JSONB NOT NULL,
+          created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at     TIMESTAMP WITH TIME ZONE
         );
         """,
         # Create index on user_id
@@ -81,20 +81,20 @@ def setup_database() -> bool:
                 sql_clean = sql_clean[:-1]
 
             # Call the exec_sql function (must be created in the database first)
-            result = supabase.rpc('exec_sql', {'sql': sql_clean}).execute()
+            supabase.rpc('exec_sql', {'sql': sql_clean}).execute()
             print(f"SQL command {i} executed successfully")
         except Exception as e:
             error_msg = str(e)
             # Check if it's because the function doesn't exist
             if 'Could not find the function' in error_msg and 'exec_sql' in error_msg:
-                print(f"ERROR: The 'exec_sql' function does not exist in the database. Please create it first:")
+                print("ERROR: The 'exec_sql' function does not exist in the database. Please create it first:")
                 print("""CREATE OR REPLACE FUNCTION exec_sql(sql text)
 RETURNS void AS $$
 BEGIN
   EXECUTE sql;
 END;
 $$ LANGUAGE plpgsql;""")
-                print(f"Then run the setup script again.")
+                print("Then run the setup script again.")
                 return False
             else:
                 print(f"ERROR: Failed to execute SQL command {i}: {e}")

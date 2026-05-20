@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.v1 import extract, history, export, llm_config
 from .core.config import settings
-from .db import setup  # Import the setup module
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -49,10 +48,9 @@ async def startup_event():
     """
     Run database setup on application startup.
     """
-    success = setup.setup_database()
-    if not success:
-        # Log the error but don't stop the application
-        print("WARNING: Database setup failed. Continuing anyway.")
+        # success = setup.setup_database()
+    # Tables are already created manually, so we will skip this call.
+    # If you need to run setup_database uncomment the line above and ensure Supabase is properly configured.
 
 
 @app.get("/health")

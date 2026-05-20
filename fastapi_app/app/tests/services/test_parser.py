@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from fastapi_app.app.services.parser import (
     parse_llm_response,
     determine_status,

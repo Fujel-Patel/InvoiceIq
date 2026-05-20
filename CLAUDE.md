@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Common Development Commands
 - **Run the full development environment**: `./scripts/dev.sh`
-- **Run backend only**: `uvicorn fastapi_app.app.main:app --host 0.0.0.0 --port 8765`
+- **Run backend only**: `python3.12 -m uvicorn fastapi_app.app.main:app --host 0.0.0.0 --port 8765 --reload`
 - **Run frontend (Vite)**: `npm run dev` (from `frontend/`)
 - **Lint & auto‑fix**: `ruff check --fix .`
 - **Static type checking**: `mypy --strict fastapi_app/`
@@ -17,6 +17,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Create a new migration**: `alembic revision --autogenerate -m "description"`
 
 ## High-Level Architecture
+For detailed file layout, see [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
+
 - **Entry points**
   - Backend: `fastapi_app/app/main.py` launches the FastAPI app via `uvicorn`.
   - Frontend: Next.js app located in `frontend/` directory.
@@ -81,16 +83,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - All I/O is asynchronous.
 - Before committing, run `ruff check --fix . && mypy --strict fastapi_app/ && pytest fastapi_app/tests/ -v`.
 
-## Today's Progress (2026-05-10)
-- Implemented all 5 requested RESTful APIs for invoice extraction:
-  1. POST /extract/upload - File upload and Claude Vision processing
-  2. GET /extract/{extraction_id} - Retrieve specific extraction
-  3. PUT /extract/{extraction_id} - Update extraction data
-  4. GET /history - Get user's extraction history
-  5. POST /export - Export data as CSV or Excel
-- Created centralized Pydantic models in `fastapi_app/app/models/invoice.py`:
-  - LineItem, ExtractedInvoice, ExtractionResponse, HistoryItem, ExportRequest
-- Updated all services and API endpoints to use the centralized models
-- Created comprehensive test suite (15 tests passing) covering models, services, and APIs
-- Updated CLAUDE.md documentation to reflect current code structure
-- Fixed import issues and ensured all syntax validates correctly
+## Today's Progress (2026-05-12)
+- Fixed Supabase database schema consistency across SQLAlchemy models, setup scripts, and Supabase SQL
+- Aligned column names and types in:
+  - `/fastapi_app/app/models/extraction.py` (SQLAlchemy model)
+  - `/fastapi_app/supabase_setup.sql` (Supabase setup script)
+  - `/fastapi_app/app/db/setup.py` (database initialization script)
+- Added missing columns: invoice_number, due_date, subtotal, tax
+- Fixed user_id type consistency (Text with proper references)
+- Ensured created_at/updated_at column naming consistency
+- Made full_data column NOT NULL where appropriate
+- Updated imports to remove unused dependencies

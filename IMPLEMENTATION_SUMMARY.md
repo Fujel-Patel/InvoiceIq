@@ -15,43 +15,10 @@ This document summarizes the implementation of the requested RESTful APIs for th
 - Validates file type (jpg, png, pdf only) via existing validators
 - Validates file size (max 10MB configurable)
 - Converts uploaded file to base64
-- Sends to Claude Vision API for data extraction
-- Parses LLM JSON response into structured ExtractedInvoice data
-- Saves extraction record to Supabase database
-- Returns ExtractionResponse with extraction ID, status, and data
-
-**Request**:
-```
-Content-Type: multipart/form-data
-Body: file (image/jpeg, image/png, application/pdf)
-```
-
-**Response**:
-```json
-{
-  "extraction_id": "uuid-string",
-  "status": "success|partial|failed",
-  "data": {
-    "vendor_name": "string",
-    "invoice_number": "string", 
-    "invoice_date": "ISO date string",
-    "due_date": "ISO date string",
-    "line_items": [
-      {
-        "description": "string",
-        "quantity": "float",
-        "unit_price": "float", 
-        "total": "float"
-      }
-    ],
-    "subtotal": "float",
-    "tax": "float",
-    "total_amount": "float",
-    "currency": "string"
-  },
-  "raw_text": null
-}
-```
+- Sends to selected LLM vision API (via `ClaudeService` → `llm_interface`)
+- Parses JSON response (`parser.py` handles markdown-wrapped JSON)
+- Saves to Supabase (`extractions` table)
+- Returns `ExtractionResponse`
 
 ### 2. GET /extract/{extraction_id}
 **Endpoint**: `/api/v1/extract/{extraction_id}`
@@ -63,16 +30,6 @@ Body: file (image/jpeg, image/png, application/pdf)
 - Fetches extraction record from Supabase
 - Validates user authorization (ensures user owns the extraction)
 - Returns structured extraction data
-
-**Response**:
-```json
-{
-  "extraction_id": "uuid-string", 
-  "status": "success|partial|failed",
-  "data": { /* ExtractedInvoice object */ },
-  "raw_text": null
-}
-```
 
 ### 3. PUT /extract/{extraction_id}
 **Endpoint**: `/api/v1/extract/{extraction_id}`
@@ -86,28 +43,6 @@ Body: file (image/jpeg, image/png, application/pdf)
 - Updates record in Supabase database
 - Returns updated ExtractionResponse
 
-**Request Body**:
-```json
-{
-  "vendor_name": "string",
-  "invoice_number": "string",
-  "invoice_date": "ISO date string",
-  "due_date": "ISO date string", 
-  "line_items": [
-    {
-      "description": "string",
-      "quantity": "float",
-      "unit_price": "float",
-      "total": "float"
-    }
-  ],
-  "subtotal": "float",
-  "tax": "float", 
-  "total_amount": "float",
-  "currency": "string"
-}
-```
-
 ### 4. GET /history
 **Endpoint**: `/api/v1/history`
 **Method**: GET
@@ -118,23 +53,6 @@ Body: file (image/jpeg, image/png, application/pdf)
 - Fetches all extractions for the specified user from Supabase
 - Returns list of HistoryItem objects
 - Each history item includes key extraction metadata
-
-**Query Parameters**:
-- `user_id` (optional): Specific user ID to fetch history for
-
-**Response**:
-```json
-[
-  {
-    "extraction_id": "uuid-string",
-    "filename": "original-filename.pdf", 
-    "extracted_at": "ISO timestamp",
-    "vendor_name": "string",
-    "total_amount": 123.45,
-    "status": "success|partial|failed"
-  }
-]
-```
 
 ### 5. POST /export
 **Endpoint**: `/api/v1/export`
@@ -147,18 +65,6 @@ Body: file (image/jpeg, image/png, application/pdf)
 - Fetches extraction data from Supabase
 - Converts data to requested format
 - Returns file download with appropriate headers
-
-**Request Body**:
-```json
-{
-  "extraction_id": "uuid-string",
-  "format": "csv|excel"
-}
-```
-
-**Response**:
-- CSV: Text/csv content with attachment header
-- Excel: Application/vnd.openxmlformats-officedocument.spreadsheetml.spreadsheet content
 
 ## Implementation Details
 
@@ -212,11 +118,23 @@ Comprehensive test suite created:
 fastapi_app/app/
 ├── api/
 │   └── v1/
-│       ├── extract.py          # POST/GET/PUT extract endpoints
-│       ├── history.py          # GET history endpoint  
-│       └── export.py           # POST export endpoint
+│       ├── extract.py          # POST/GET/PUT extraction endpoints
+│       ├── history.py          # GET history endpoint
+│       ├── export.py           # POST export endpoint (CSV/Excel)
+│       └── llm_config.py       # LLM configuration endpoint
 ├── models/
-│   └── invoice.py              # All Pydantic models
+│   ├── invoice.py              # Centralized Pydantic models
+│   ├── extraction.py           # SQLAlchemy extraction model
+│   └── llm_config.py           # LLM configuration model
+├── schemas/
+│   └── extraction.py           # ExtractionResponse schema
+├── services/
+│   ├── llm_interface.py       # Base LLM service & provider implementations
+│   ├── llm_config_service.py  # Service for LLM config CRUD
+│   ├── parser.py              # Updated to use centralized models
+│   └── db.py                  # Fixed model imports
+├── utils/
+│   └── auth.py                # JWT validation with dev bypass
 └── tests/
     ├── api/
     │   └── test_extract.py

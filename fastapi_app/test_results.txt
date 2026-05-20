@@ -1,0 +1,17 @@
+--- API Test Results ---
+Total Tests: 5
+Passed: 0 ✅
+Failed: 5 ❌
+
+--- Detailed Results ---
+GET /health: FAIL ❌
+
+POST /extract/upload: FAIL ❌
+
+PUT /extract/{extraction_id}: FAIL ❌
+Error: Skipped due to previous test failure or missing extraction ID.
+
+GET /history: FAIL ❌
+
+POST /export: FAIL ❌
+Error: Skipped due to previous test failure or missing extraction ID.

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from typing import Any, Dict, List, Optional
 from supabase import create_client, Client
 from ..core.config import settings
@@ -42,8 +41,16 @@ class DatabaseService:
             "id": extraction_id,
             "filename": filename,
             "user_id": user_id,
-            "extracted_data": data.dict(),
             "status": status,
+            "vendor_name": data.vendor_name,
+            "invoice_number": data.invoice_number,
+            "invoice_date": data.invoice_date,
+            "due_date": data.due_date,
+            "subtotal": data.subtotal,
+            "tax": data.tax,
+            "total_amount": data.total_amount,
+            "currency": data.currency,
+            "full_data": data.model_dump(),
         }
 
         result = self.supabase.table(self.table_name).insert(record).execute()
@@ -82,8 +89,16 @@ class DatabaseService:
             The updated extraction record if found, None otherwise
         """
         result = self.supabase.table(self.table_name).update({
-            "extracted_data": data.dict(),
-            "updated_at": "now()"  # Supabase will handle the timestamp
+            "vendor_name": data.vendor_name,
+            "invoice_number": data.invoice_number,
+            "invoice_date": data.invoice_date,
+            "due_date": data.due_date,
+            "subtotal": data.subtotal,
+            "tax": data.tax,
+            "total_amount": data.total_amount,
+            "currency": data.currency,
+            "full_data": data.model_dump(),
+            "updated_at": "now()"
         }).eq("id", extraction_id).execute()
 
         if not result.data:

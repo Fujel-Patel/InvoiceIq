@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from supabase import create_client, Client
 from ..core.config import settings
-from ..models.llm_config import LLMConfigCreate, LLMConfigUpdate, LLMConfigInDBBase
+from ..models.llm_config import LLMConfigCreate, LLMConfigUpdate
 
 
 class LLMConfigService:

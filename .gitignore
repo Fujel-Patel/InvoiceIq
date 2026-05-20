@@ -111,3 +111,10 @@ npm-debug.log*
 
 # Alembic versions (if needed)
 alembic/versions/__pycache__/
+
+# Kilo config and caches
+.kilo/
+.claude/
+.mypy_cache/
+.ruff_cache/
+alembic/versions/__pycache__/

@@ -1,118 +1,175 @@
-'use client';
+"use client";
 
-interface LineItem {
-  description: string;
-  quantity: number;
-  unit_price: number;
-  total: number;
-}
-
-interface ExtractionData {
-  vendor_name: string;
-  date: string;
-  line_items: LineItem[];
-  tax: number;
-  total_amount: number;
-  currency: string;
-}
+import { useState } from "react";
+import { motion } from "motion/react";
+import { toast } from "sonner";
+import { Save, Edit2, X, Check } from "lucide-react";
+import { ExtractedInvoice, updateExtraction } from "@/lib/api";
+import { formatCurrency, formatDate, formatStatus, cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 interface DataTableProps {
-  data: ExtractionData;
+  extractionId: string;
+  data: ExtractedInvoice;
+  status: "success" | "partial" | "failed";
+  filename: string;
 }
 
-export default function DataTable({ data }: DataTableProps) {
-  return (
-    <div className="space-y-6">
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Vendor Information</h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500">Vendor Name:</span>
-            <span className="font-medium">{data.vendor_name}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Date:</span>
-            <span className="font-medium">{new Date(data.date).toLocaleDateString()}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Currency:</span>
-            <span className="font-medium">{data.currency}</span>
-          </div>
-        </div>
-      </div>
+const statusColors: Record<string, string> = {
+  green: "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300",
+  yellow: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900 dark:text-yellow-300",
+  red: "bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-300",
+  gray: "bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300",
+};
 
-      {data.line_items.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium mb-2">Line Items</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Quantity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Unit Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.line_items.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.description}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.quantity}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {data.currency} {item.unit_price.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {data.currency} {item.total.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50">
-                <tr>
-                  <td className="px-6 py-4 text-left text-sm font-medium text-gray-900">
-                    Subtotal
-                  </td>
-                  <td className="px-6 py-4 text-left text-sm text-gray-500" colSpan={2}></td>
-                  <td className="px-6 py-4 text-left text-sm text-gray-500">
-                    {data.currency} {data.line_items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 text-left text-sm font-medium text-gray-900">
-                    Tax
-                  </td>
-                  <td className="px-6 py-4 text-left text-sm text-gray-500" colSpan={2}></td>
-                  <td className="px-6 py-4 text-left text-sm text-gray-500">
-                    {data.currency} {data.tax.toFixed(2)}
-                  </td>
-                </tr>
-                <tr className="font-bold">
-                  <td className="px-6 py-4 text-left text-sm text-gray-900">
-                    Total
-                  </td>
-                  <td className="px-6 py-4 text-left text-sm text-gray-500" colSpan={2}></td>
-                  <td className="px-6 py-4 text-left text-sm text-gray-900">
-                    {data.currency} {data.total_amount.toFixed(2)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+export default function DataTable({ extractionId, data, status, filename }: DataTableProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState<ExtractedInvoice>(data);
+
+  const statusInfo = formatStatus(status);
+
+  const handleFieldChange = (field: keyof ExtractedInvoice, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: field.includes("amount") || field.includes("subtotal") || field.includes("tax") || field.includes("quantity") || field.includes("price")
+        ? value === "" ? null : parseFloat(value)
+        : value,
+    }));
+  };
+
+  const handleLineItemChange = (index: number, field: keyof ExtractedInvoice["line_items"][number], value: string) => {
+    setFormData((prev) => {
+      const newLineItems = [...prev.line_items];
+      newLineItems[index] = {
+        ...newLineItems[index],
+        [field]: field === "description" ? value : value === "" ? null : parseFloat(value),
+      };
+      return { ...prev, line_items: newLineItems };
+    });
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateExtraction(extractionId, formData);
+      toast.success("Extraction updated successfully!");
+      setIsEditing(false);
+    } catch (error) {
+      toast.error("Failed to update extraction.");
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData(data);
+    setIsEditing(false);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <h2 className="text-xl font-bold">{filename}</h2>
+            <Badge className={cn("mt-2", statusColors[statusInfo.color] || statusColors.gray)}>
+              {statusInfo.label}
+            </Badge>
           </div>
-        </div>
-      )}
-    </div>
+          <div className="flex gap-2">
+            {!isEditing ? (
+              <Button variant="outline" onClick={() => setIsEditing(true)}>
+                <Edit2 className="w-4 h-4 mr-2" /> Edit
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+                  <X className="w-4 h-4 mr-2" /> Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? "Saving..." : <><Check className="w-4 h-4 mr-2" /> Save</>}
+                </Button>
+              </>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {(["vendor_name", "invoice_number", "invoice_date", "due_date", "currency", "subtotal", "tax", "total_amount"] as const).map((field) => (
+              <div key={field} className="space-y-2">
+                <Label className="capitalize">{field.replace("_", " ")}</Label>
+                {isEditing ? (
+                  <Input
+                    value={formData[field] ?? ""}
+                    onChange={(e) => handleFieldChange(field, e.target.value)}
+                  />
+                ) : (
+                  <div className={cn("text-sm", field.includes("amount") && "text-2xl font-bold")}>
+                    {field.includes("date")
+                      ? formatDate(formData[field] as string)
+                      : field.includes("amount") || field.includes("subtotal") || field.includes("tax")
+                      ? formatCurrency(formData[field] as number, formData.currency || "USD")
+                      : (formData[field] ?? "N/A")}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <h3 className="font-semibold">Line Items</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Unit Price</TableHead>
+                  <TableHead>Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {formData.line_items.length > 0 ? (
+                  formData.line_items.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {isEditing ? <Input value={item.description} onChange={(e) => handleLineItemChange(index, "description", e.target.value)} /> : item.description}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? <Input type="number" value={item.quantity ?? ""} onChange={(e) => handleLineItemChange(index, "quantity", e.target.value)} /> : item.quantity ?? "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? <Input type="number" value={item.unit_price ?? ""} onChange={(e) => handleLineItemChange(index, "unit_price", e.target.value)} /> : formatCurrency(item.unit_price, formData.currency || "USD")}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? <Input type="number" value={item.total ?? ""} onChange={(e) => handleLineItemChange(index, "total", e.target.value)} /> : formatCurrency(item.total, formData.currency || "USD")}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">No line items found</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

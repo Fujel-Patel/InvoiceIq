@@ -1,94 +1,134 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import { useRouter } from "next/navigation";
+import { UploadCloud, X, Loader2, FileText, Image as ImageIcon, FileType } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
+import { uploadInvoice } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface UploaderProps {
-  onUpload: (file: File) => Promise<void>;
-  loading?: boolean;
-}
-
-export default function Uploader({ onUpload, loading = false }: UploaderProps) {
+export default function Uploader() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
-  const [dragOver, setDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+  const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
+    if (fileRejections.length > 0) {
+      const error = fileRejections[0].errors[0];
+      if (error.code === "file-too-large") {
+        toast.error("File must be under 10MB");
+      } else if (error.code === "file-invalid-type") {
+        toast.error("Only JPG, PNG, PDF allowed");
+      } else {
+        toast.error(error.message);
+      }
+      return;
     }
-  };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+    if (acceptedFiles.length > 0) {
+      setFile(acceptedFiles[0]);
     }
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setDragOver(false);
-  };
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/jpeg": [],
+      "image/png": [],
+      "application/pdf": [],
+    },
+    maxSize: 10 * 1024 * 1024,
+    multiple: false,
+  });
 
   const handleUpload = async () => {
     if (!file) return;
-    await onUpload(file);
+
+    setIsUploading(true);
+    try {
+      const result = await uploadInvoice(file);
+      toast.success("Extraction successful!");
+      router.push(`/result/${result.extraction_id}`);
+    } catch (error) {
+      toast.error("Extraction failed. Try again.");
+      console.error(error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const acceptTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+  const getFileIcon = (type: string) => {
+    if (type.startsWith("image/")) return <ImageIcon className="w-8 h-8 text-primary" />;
+    if (type === "application/pdf") return <FileText className="w-8 h-8 text-destructive" />;
+    return <FileType className="w-8 h-8 text-muted-foreground" />;
+  };
 
   return (
-    <div className="border-2 border-dashed rounded-lg p-8 text-center transition-colors hover:border-gray-300">
-      {dragOver && <div className="bg-blue-50"></div>}
-
-      <div className="relative z-10">
-        <input
-          type="file"
-          accept={acceptTypes.join(',')}
-          className="hidden"
-          onChange={handleFileChange}
-        />
-
-        <div className="cursor-pointer">
-          {file ? (
-            <div className="mb-4">
-              <p className="text-sm text-gray-600">Selected file:</p>
-              <p className="font-medium">{file.name}</p>
+    <Card className="w-full max-w-md mx-auto">
+      <CardContent className="pt-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {!file ? (
+            <div
+              {...getRootProps()}
+              className={cn(
+                "border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors",
+                isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50"
+              )}
+            >
+              <input {...getInputProps()} />
+              <UploadCloud className="w-10 h-10 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium text-foreground">Drag & drop your invoice here</p>
+              <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-4">JPG, PNG, PDF up to 10MB</p>
             </div>
           ) : (
-            <>
-              <div className="mb-4">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16h4v2m0 0l-4-4m4 4l4-4m0 6H9a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
+                {getFileIcon(file.type)}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setFile(null)}
+                  disabled={isUploading}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-              <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Supported formats: JPG, PNG, PDF
-              </p>
-            </>
+
+              <Button
+                className="w-full"
+                onClick={handleUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Extracting...
+                  </>
+                ) : (
+                  "Extract Data"
+                )}
+              </Button>
+            </motion.div>
           )}
-
-          <button
-            onClick={() => document.querySelector('input[type="file"]')?.click()}
-            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
-            disabled={loading || !file}
-          >
-            {loading ? 'Uploading...' : 'Upload and Extract'}
-          </button>
-        </div>
-      </div>
-
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className="absolute inset-0 pointer-events-none"
-      />
-    </div>
+        </motion.div>
+      </CardContent>
+    </Card>
   );
 }
