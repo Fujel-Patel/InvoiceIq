@@ -118,6 +118,14 @@ repomix-output.xml
 # Alembic versions (if needed)
 alembic/versions/__pycache__/
 
+# Test & generated artifacts
+**/test_results.txt
+**/dummy_invoice.png
+
+# Scratch / diagnostic files
+context.md
+test_pydantic.py
+
 # Kilo config and caches
 .kilo/
 .claude/
