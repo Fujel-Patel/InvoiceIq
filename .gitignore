@@ -132,3 +132,13 @@ test_pydantic.py
 .mypy_cache/
 .ruff_cache/
 alembic/versions/__pycache__/
+
+# Local-only files (kept on machine, not pushed to GitHub)
+.mcp.json
+.repomixignore
+repomix.config.json
+AGENTS.md
+CLAUDE.md
+FOLDER_STRUCTURE.md
+IMPLEMENTATION_SUMMARY.md
+TASK_COMPLETION_SUMMARY.md
