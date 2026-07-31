@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 import os
+
 from dotenv import load_dotenv
+from loguru import logger
 from supabase import create_client
 
 load_dotenv()
@@ -14,6 +18,6 @@ tables = ["extractions", "llm_configs"]
 for table in tables:
     try:
         result = client.table(table).select("*").limit(1).execute()
-        print(f"✅ {table} → Connected")
+        logger.info(f"{table} -> Connected")
     except Exception as e:
-        print(f"❌ {table} → FAILED: {e}")
+        logger.error(f"{table} -> FAILED: {e}")

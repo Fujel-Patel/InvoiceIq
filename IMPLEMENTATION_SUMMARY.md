@@ -54,10 +54,25 @@ This document summarizes the implementation of the requested RESTful APIs for th
 - Returns list of HistoryItem objects
 - Each history item includes key extraction metadata
 
-### 5. POST /export
-**Endpoint**: `/api/v1/export`
+### 6. POST /settings/llm/verify
+**Endpoint**: `/settings/llm/verify`
 **Method**: POST
-**Description**: Export extraction data as CSV or Excel file
+**Description**: Verify an LLM provider API key
+
+### 7. GET /settings/llm/config
+**Endpoint**: `/settings/llm/config`
+**Method**: GET
+**Description**: Retrieve current LLM configuration
+
+### 8. POST /settings/llm/config
+**Endpoint**: `/settings/llm/config`
+**Method**: POST
+**Description**: Create LLM configuration
+
+### 9. PUT /settings/llm/config
+**Endpoint**: `/settings/llm/config`
+**Method**: PUT
+**Description**: Update LLM configuration
 
 **Features**:
 - Accepts JSON body with extraction_id and format

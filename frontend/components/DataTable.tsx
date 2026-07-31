@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Save, Edit2, X, Check } from "lucide-react";
 import { ExtractedInvoice, updateExtraction } from "@/lib/api";

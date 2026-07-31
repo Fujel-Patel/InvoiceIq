@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class LLMProvider(str, Enum):
+    ANTHROPIC = "anthropic"
+    OPENAI = "openai"
+    GOOGLE = "google"
+    GROQ = "groq"
+
+
 class LLMConfigBase(BaseModel):
-    provider: str = Field(..., description="LLM provider (e.g., 'anthropic', 'openai', 'gemini', 'groq', 'openrouter')")
+    provider: LLMProvider = Field(..., description="LLM provider")
     api_key: str = Field(..., description="API key for the provider")
-    model: Optional[str] = Field(None, description="Model name to use (optional, uses provider default if not provided)")
+    model: str = Field(..., description="Model name to use")
 
 
 class LLMConfigCreate(LLMConfigBase):
@@ -16,9 +24,29 @@ class LLMConfigCreate(LLMConfigBase):
 
 
 class LLMConfigUpdate(BaseModel):
-    provider: Optional[str] = None
+    provider: Optional[LLMProvider] = None
     api_key: Optional[str] = None
     model: Optional[str] = None
+
+
+class LLMConfigResponse(BaseModel):
+    provider: LLMProvider
+    model: str
+    is_valid: bool
+    masked_api_key: str
+    user_id: str
+
+
+class VerifyLLMRequest(BaseModel):
+    provider: LLMProvider
+    api_key: str
+    model: str
+
+
+class VerifyLLMResponse(BaseModel):
+    is_valid: bool
+    message: str
+    provider: LLMProvider
 
 
 class LLMConfigInDBBase(LLMConfigBase):
@@ -28,7 +56,7 @@ class LLMConfigInDBBase(LLMConfigBase):
     updated_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class LLMConfig(LLMConfigInDBBase):

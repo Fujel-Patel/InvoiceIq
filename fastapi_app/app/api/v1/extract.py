@@ -76,7 +76,8 @@ async def upload_and_extract(
         # Extract invoice data using Claude Vision
         extraction_result = await claude_service.extract_invoice_data(
             base64_file=base64_content,
-            media_type=media_type
+            media_type=media_type,
+            user_id=current_user
         )
 
         # Parse and validate the extracted data using our parser

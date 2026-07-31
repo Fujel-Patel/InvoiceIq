@@ -1,10 +1,17 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 
 from .api.v1 import extract, history, export, llm_config
 from .core.config import settings
+from .core.logging import setup_logging
+from .routes import settings as settings_routes
+
+setup_logging()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -14,11 +21,33 @@ app = FastAPI(
 # Set up CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=[
+        "http://localhost:3000",
+    ],  # Configure appropriately for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({elapsed_ms:.1f}ms)")
+    return response
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception(f"Unhandled exception: {exc}")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
 
 # Include routers
 app.include_router(
@@ -41,16 +70,16 @@ app.include_router(
     prefix=settings.API_V1_STR,
     tags=["llm-config"]
 )
+app.include_router(
+    settings_routes.router,
+    prefix="/settings",
+    tags=["settings"]
+)
 
 
 @app.on_event("startup")
 async def startup_event():
-    """
-    Run database setup on application startup.
-    """
-        # success = setup.setup_database()
-    # Tables are already created manually, so we will skip this call.
-    # If you need to run setup_database uncomment the line above and ensure Supabase is properly configured.
+    logger.info(f"Starting {settings.PROJECT_NAME}")
 
 
 @app.get("/health")

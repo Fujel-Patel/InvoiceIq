@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import os
 import sys
+
 from dotenv import load_dotenv
+from loguru import logger
 from supabase import create_client, Client
+
 
 def setup_database() -> bool:
     """Set up the database tables and triggers.
@@ -16,14 +19,14 @@ def setup_database() -> bool:
     supabase_service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
     if not supabase_url or not supabase_service_role_key:
-        print("ERROR: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found in environment")
+        logger.error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found in environment")
         return False
 
     try:
         supabase: Client = create_client(supabase_url, supabase_service_role_key)
-        print("Connected to Supabase")
+        logger.info("Connected to Supabase")
     except Exception as e:
-        print(f"ERROR: Failed to create Supabase client: {e}")
+        logger.error(f"Failed to create Supabase client: {e}")
         return False
 
     # SQL commands to execute
@@ -82,25 +85,27 @@ def setup_database() -> bool:
 
             # Call the exec_sql function (must be created in the database first)
             supabase.rpc('exec_sql', {'sql': sql_clean}).execute()
-            print(f"SQL command {i} executed successfully")
+            logger.info(f"SQL command {i} executed successfully")
         except Exception as e:
             error_msg = str(e)
             # Check if it's because the function doesn't exist
             if 'Could not find the function' in error_msg and 'exec_sql' in error_msg:
-                print("ERROR: The 'exec_sql' function does not exist in the database. Please create it first:")
-                print("""CREATE OR REPLACE FUNCTION exec_sql(sql text)
-RETURNS void AS $$
-BEGIN
-  EXECUTE sql;
-END;
-$$ LANGUAGE plpgsql;""")
-                print("Then run the setup script again.")
+                logger.error(
+                    "The 'exec_sql' function does not exist in the database. Please create it first:\n"
+                    "CREATE OR REPLACE FUNCTION exec_sql(sql text)\n"
+                    "RETURNS void AS $$\n"
+                    "BEGIN\n"
+                    "  EXECUTE sql;\n"
+                    "END;\n"
+                    "$$ LANGUAGE plpgsql;\n"
+                    "Then run the setup script again."
+                )
                 return False
             else:
-                print(f"ERROR: Failed to execute SQL command {i}: {e}")
+                logger.error(f"Failed to execute SQL command {i}: {e}")
                 return False
 
-    print("Database setup completed successfully.")
+    logger.info("Database setup completed successfully.")
     return True
 
 if __name__ == "__main__":

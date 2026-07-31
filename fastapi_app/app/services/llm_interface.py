@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import base64
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from loguru import logger
@@ -205,7 +204,6 @@ class GeminiLLMService(BaseLLMService):
 
     def __init__(self, api_key: str, model: str = "gemini-1.5-pro-latest"):
         import google.generativeai as genai
-        self.client = genai.GenerativeModel(model)
         self.api_key = api_key
         genai.configure(api_key=api_key)
         self.model = model
@@ -224,24 +222,49 @@ class GeminiLLMService(BaseLLMService):
         """
         try:
             import google.generativeai as genai
-            from PIL import Image
-            import io
+            import base64
 
             # Configure the API key
             genai.configure(api_key=self.api_key)
 
-            # Convert base64 to image
-            image_data = base64.b64decode(base64_file)
-            image = Image.open(io.BytesIO(image_data))
+            # Decode the base64 data
+            file_data = base64.b64decode(base64_file)
+
+            # Prepare the content based on media type
+            if media_type.startswith('image/'):
+                # For images
+                import base64
+                image_data = base64.b64encode(file_data).decode('utf-8')
+                image_part = {
+                    "inline_data": {
+                        "mime_type": media_type,
+                        "data": image_data
+                    }
+                }
+            elif media_type == 'application/pdf':
+                # For PDFs
+                import base64
+                pdf_data = base64.b64encode(file_data).decode('utf-8')
+                image_part = {
+                    "inline_data": {
+                        "mime_type": media_type,
+                        "data": pdf_data
+                    }
+                }
+            else:
+                raise ValueError(f"Unsupported media type: {media_type}")
+
+            # Initialize the model
+            model = genai.GenerativeModel(self.model)
 
             # Call Gemini Vision API
             prompt = """
-            Extract all invoice data from this image and return ONLY a valid JSON object with these fields:
+            Extract all invoice data from this document and return ONLY a valid JSON object with these fields:
             vendor_name, invoice_number, invoice_date, due_date, line_items (array with description, quantity, unit_price, total),
             subtotal, tax, total_amount, currency. If a field is not found, set it to null.
             """
 
-            response = self.client.generate_content([prompt, image])
+            response = model.generate_content([prompt, image_part])
             text_content = response.text
 
             # Try to parse JSON from the response
@@ -412,7 +435,7 @@ def create_llm_service(provider: str, api_key: str, model: Optional[str] = None)
         return AnthropicLLMService(api_key, model or "claude-opus-4-5-20251001")
     elif provider == "openai":
         return OpenAILLMService(api_key, model or "gpt-4o")
-    elif provider == "gemini":
+    elif provider == "gemini" or provider == "google":
         return GeminiLLMService(api_key, model or "gemini-1.5-pro-latest")
     elif provider == "groq":
         return GroqLLMService(api_key, model or "mixtral-8x7b-32768")

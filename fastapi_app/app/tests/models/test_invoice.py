@@ -93,14 +93,15 @@ def test_history_item():
 def test_export_request():
     """Test ExportRequest model"""
     export_csv = ExportRequest(
-        extraction_id="ext-123",
+        extraction_ids=["ext-123"],
         format="csv"
     )
-    assert export_csv.extraction_id == "ext-123"
+    assert export_csv.extraction_ids == ["ext-123"]
     assert export_csv.format == "csv"
 
     export_excel = ExportRequest(
-        extraction_id="ext-123",
+        extraction_ids=["ext-123", "ext-456"],
         format="excel"
     )
+    assert export_excel.extraction_ids == ["ext-123", "ext-456"]
     assert export_excel.format == "excel"

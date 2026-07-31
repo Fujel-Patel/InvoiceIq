@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   getLLMConfig,
-  createLLMConfig,
-  updateLLMConfig,
+  saveLLMConfig,
   deleteLLMConfig,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -34,13 +33,11 @@ export default function LLMConfigPage() {
   // Load existing config on mount
   useEffect(() => {
     const fetchConfig = async () => {
-      try {
-        const cfg = await getLLMConfig();
+      const cfg = await getLLMConfig();
+      if (cfg) {
         setProvider(cfg.provider ?? "anthropic");
-        setApiKey(cfg.api_key ?? "");
+        setApiKey(cfg.masked_api_key ?? "");
         setModel(cfg.model ?? "");
-      } catch (e) {
-        // No config yet – ignore
       }
     };
     fetchConfig();
@@ -51,21 +48,10 @@ export default function LLMConfigPage() {
       toast.error("API key is required");
       return;
     }
-    const payload = { provider, api_key: apiKey, model };
     setLoading(true);
     try {
-      // Try update first; if 404, create
-      try {
-        await updateLLMConfig(payload);
-        toast.success("LLM configuration updated");
-      } catch (err: any) {
-        if (err?.response?.status === 404) {
-          await createLLMConfig(payload);
-          toast.success("LLM configuration created");
-        } else {
-          throw err;
-        }
-      }
+      await saveLLMConfig({ provider, api_key: apiKey, model });
+      toast.success("LLM configuration saved");
     } catch (e) {
       toast.error("Failed to save LLM configuration");
     } finally {

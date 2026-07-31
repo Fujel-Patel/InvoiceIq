@@ -39,7 +39,11 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL: str = Field(default="anthropic/claude-3.5-sonnet", env="OPENROUTER_MODEL")
 
     # Default LLM provider to use if not specified
-    DEFAULT_LLM_PROVIDER: str = Field(default="anthropic", env="DEFAULT_LLM_PROVIDER")
+    DEFAULT_LLM_PROVIDER: str = Field(default="gemini", env="DEFAULT_LLM_PROVIDER")
+
+    # Default LLM model and API key
+    DEFAULT_LLM_MODEL: str = Field(default="gemini-1.5-pro-latest", env="DEFAULT_LLM_MODEL")
+    DEFAULT_LLM_API_KEY: str = Field(default="", env="DEFAULT_LLM_API_KEY")
 
     # Supabase
     SUPABASE_URL: str = Field(..., env="SUPABASE_URL")

@@ -64,12 +64,20 @@ InvoiceIQ/
 │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── page.tsx                     # Upload landing page
+│   │   ├── login/
+│   │   │   └── page.tsx                 # Login page
+│   │   ├── llm-config/
+│   │   │   └── page.tsx                 # LLM configuration page
+│   │   ├── not-found.tsx                # 404 page
+│   │   ├── error.tsx                    # Error page
+│   │   ├── loading.tsx                  # Loading page
 │   │   ├── history/
 │   │   │   ├── __init__.py
 │   │   │   └── page.tsx                 # History view
 │   │   └── result/
 │   │       ├── __init__.py
 │   │       └── page.tsx                 # Result display & edit page
+│   ├── middleware.ts                    # Auth middleware
 │   ├── components/
 │   │   ├── __init__.py
 │   │   ├── Uploader.tsx                 # Drag‑and‑drop file upload component

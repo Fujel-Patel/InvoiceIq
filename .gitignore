@@ -109,6 +109,12 @@ npm-debug.log*
 /tmp/
 .cache/
 
+# Browser automation session artifacts (may capture sensitive form data)
+.playwright-mcp/
+
+# Generated codebase bundle (can embed secrets from tracked/untracked files)
+repomix-output.xml
+
 # Alembic versions (if needed)
 alembic/versions/__pycache__/
 

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { motion } from "motion/react";
-import { ArrowLeft, AlertCircle, RefreshCw, History } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, AlertCircle, RefreshCw, History, Zap } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import Link from "next/link";
 import { getExtraction } from "@/lib/api";
@@ -37,6 +37,32 @@ function ResultContent() {
   }
 
   if (isError || !data) {
+    // Check if this is an API key configuration error
+    const isApiKeyError = error?.message?.includes('No API key configured') ||
+                         error?.message?.includes('LLM configuration not found');
+
+    if (isApiKeyError) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex flex-col items-center justify-center p-12 text-center"
+        >
+          <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+          <h2 className="text-xl font-bold">API Key Not Configured</h2>
+          <p className="text-muted-foreground mb-6">
+            You need to configure your LLM provider and API key before extracting invoice data.
+          </p>
+          <Button
+            onClick={() => router.push('/settings')}
+            variant="default"
+          >
+            <Zap className="mr-2 h-4 w-4" /> Go to Settings
+          </Button>
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div
         initial={{ opacity: 0, x: -10 }}
@@ -81,7 +107,7 @@ export default function ResultPage() {
 
         <nav className="border-b bg-background sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+            <Button variant="ghost" size="sm" onClick={() => router.back()}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
             <h1 className="font-bold text-lg">Extraction Result</h1>

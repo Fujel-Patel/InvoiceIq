@@ -3,15 +3,15 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
-import { UploadCloud, X, Loader2, FileText, Image as ImageIcon, FileType } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { UploadCloud, X, Loader2, FileText, Image as ImageIcon, File } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { uploadInvoice } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function Uploader() {
+export default function Uploader({ hasLLMConfig = true }: { hasLLMConfig?: boolean }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -43,19 +43,31 @@ export default function Uploader() {
     },
     maxSize: 10 * 1024 * 1024,
     multiple: false,
+    disabled: !hasLLMConfig,
   });
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!hasLLMConfig) {
+      toast.error("Configure an LLM provider in Settings first");
+      router.push("/settings");
+      return;
+    }
 
     setIsUploading(true);
     try {
       const result = await uploadInvoice(file);
       toast.success("Extraction successful!");
       router.push(`/result/${result.extraction_id}`);
-    } catch (error) {
-      toast.error("Extraction failed. Try again.");
-      console.error(error);
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail || error?.message || "";
+      if (detail.includes("No API key configured") || detail.includes("LLM configuration")) {
+        toast.error("Configure an LLM provider in Settings first");
+        router.push("/settings");
+      } else {
+        toast.error("Extraction failed. Try again.");
+        console.error(error);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -64,7 +76,7 @@ export default function Uploader() {
   const getFileIcon = (type: string) => {
     if (type.startsWith("image/")) return <ImageIcon className="w-8 h-8 text-primary" />;
     if (type === "application/pdf") return <FileText className="w-8 h-8 text-destructive" />;
-    return <FileType className="w-8 h-8 text-muted-foreground" />;
+    return <File className="w-8 h-8 text-muted-foreground" />;
   };
 
   return (
@@ -79,14 +91,22 @@ export default function Uploader() {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors",
-                isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50"
+                "border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors",
+                !hasLLMConfig
+                  ? "border-muted-foreground/10 bg-muted/30 cursor-not-allowed opacity-60"
+                  : isDragActive
+                    ? "border-primary bg-primary/10 cursor-pointer"
+                    : "border-muted-foreground/25 hover:border-primary/50 cursor-pointer"
               )}
             >
               <input {...getInputProps()} />
               <UploadCloud className="w-10 h-10 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium text-foreground">Drag & drop your invoice here</p>
-              <p className="text-sm text-muted-foreground mt-1">or click to browse</p>
+              <p className="text-lg font-medium text-foreground">
+                {hasLLMConfig ? "Drag & drop your invoice here" : "Configure an LLM provider to upload"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {hasLLMConfig ? "or click to browse" : "Go to Settings to add an API key"}
+              </p>
               <p className="text-xs text-muted-foreground mt-4">JPG, PNG, PDF up to 10MB</p>
             </div>
           ) : (
@@ -114,7 +134,7 @@ export default function Uploader() {
               <Button
                 className="w-full"
                 onClick={handleUpload}
-                disabled={isUploading}
+                disabled={isUploading || !hasLLMConfig}
               >
                 {isUploading ? (
                   <>

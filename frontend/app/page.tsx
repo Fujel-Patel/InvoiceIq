@@ -1,28 +1,66 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, FileSearch, Zap, Shield, History } from "lucide-react";
+import { Sparkles, FileSearch, Zap, Shield, History, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-/* Theme state handled in ThemeToggle component */
+import { usePathname, useRouter } from "next/navigation";
+import React from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
 import Uploader from "@/components/Uploader";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { getLLMConfig } from "@/lib/api";
 
 export default function Home() {
+  const [checking, setChecking] = React.useState(true);
+  const [hasLLMConfig, setHasLLMConfig] = React.useState<boolean | null>(null);
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session) {
+          setChecking(false);
+          return;
+        }
+      } catch {
+        // Supabase unreachable — show app anyway
+      }
+      // No session — redirect to login
+      router.replace('/login');
+      setChecking(false);
+    };
+    checkAuth();
+  }, [router]);
+
+  React.useEffect(() => {
+    const checkConfig = () => {
+      getLLMConfig().then((cfg) => setHasLLMConfig(cfg !== null));
+    };
+    checkConfig();
+    window.addEventListener("focus", checkConfig);
+    return () => window.removeEventListener("focus", checkConfig);
+  }, []);
+
   const pathname = usePathname();
   const navLinkClass = (href: string) =>
     `text-sm font-medium flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
       pathname === href ? "text-primary" : "text-muted-foreground hover:text-primary"
     }`;
-  // Theme handling
-  /* Theme handled by ThemeToggle component */
 
-
-
+  if (checking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
@@ -44,14 +82,20 @@ export default function Home() {
               History
             </Link>
             <Link
-              href="/llm-config"
+              href="/settings"
               aria-label="LLM configuration settings"
-              className={`${navLinkClass("/llm-config")} ml-4`}
+              className={navLinkClass("/settings")}
             >
               <Zap className="w-4 h-4" />
               Settings
             </Link>
             <ThemeToggle />
+            <Button variant="ghost" size="sm" aria-label="Sign out" onClick={async () => {
+              try { await supabase.auth.signOut(); } catch { /* Supabase unreachable */ }
+              router.replace('/login');
+            }}>
+              Sign Out
+            </Button>
         </div>
       </nav>
 
@@ -76,6 +120,36 @@ export default function Home() {
           </p>
         </motion.div>
 
+        {/* LLM Config Warning */}
+        {hasLLMConfig === false && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 w-full max-w-lg"
+          >
+            <Card className="border-amber-500/50 bg-amber-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium">No LLM provider configured</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Add an API key to start extracting invoice data.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-500/50 hover:bg-amber-500/10 shrink-0"
+                  onClick={() => router.push("/settings")}
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1.5" />
+                  Configure
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Uploader Section */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -84,7 +158,7 @@ export default function Home() {
           className="mt-12 w-full max-w-lg"
         >
           <div className="p-1 rounded-xl bg-gradient-to-b from-primary/20 to-primary/5 shadow-2xl">
-            <Uploader />
+            <Uploader hasLLMConfig={hasLLMConfig ?? true} />
           </div>
         </motion.div>
 
