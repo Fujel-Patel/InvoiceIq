@@ -1,7 +1,7 @@
 # Folder Structure
 
 InvoiceIQ/
-├── fastapi_app/
+├── backend/
 │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── main.py                         # FastAPI app entry point

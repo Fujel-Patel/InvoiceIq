@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy import Column, DateTime, Float, String
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
-from fastapi_app.app.core.database import Base
+from backend.app.core.database import Base
 
 
 class Extraction(Base):

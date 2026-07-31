@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi_app.app.models.invoice import (
+from backend.app.models.invoice import (
     LineItem,
     ExtractedInvoice,
     ExtractionResponse,

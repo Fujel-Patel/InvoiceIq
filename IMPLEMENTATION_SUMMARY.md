@@ -90,7 +90,7 @@ This document summarizes the implementation of the requested RESTful APIs for th
 - Maintains separation of concerns (API layer -> Service layer -> Model layer)
 
 ### Data Models
-All Pydantic models centralized in `fastapi_app/app/models/invoice.py`:
+All Pydantic models centralized in `backend/app/models/invoice.py`:
 - `LineItem`: Invoice line item with optional quantity, unit_price, total
 - `ExtractedInvoice`: Complete invoice data model with all requested fields
 - `ExtractionResponse`: API response wrapper with extraction metadata
@@ -130,7 +130,7 @@ Comprehensive test suite created:
 
 ## Files Created/Modified
 ```
-fastapi_app/app/
+backend/app/
 ├── api/
 │   └── v1/
 │       ├── extract.py          # POST/GET/PUT extraction endpoints

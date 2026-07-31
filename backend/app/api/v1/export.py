@@ -7,8 +7,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi_app.app.models.invoice import ExportRequest, ExtractedInvoice
-from fastapi_app.app.services.db import DatabaseService
+from backend.app.models.invoice import ExportRequest, ExtractedInvoice
+from backend.app.services.db import DatabaseService
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)

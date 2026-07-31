@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi_app.app.services.db import DatabaseService
-from fastapi_app.app.models.llm_config import (
+from backend.app.services.db import DatabaseService
+from backend.app.models.llm_config import (
     LLMConfigCreate,
     LLMConfigResponse,
     VerifyLLMRequest,
     VerifyLLMResponse
 )
-from fastapi_app.app.services.llm_verification_service import verify_llm_config
-from fastapi_app.app.utils.auth import get_current_user
+from backend.app.services.llm_verification_service import verify_llm_config
+from backend.app.utils.auth import get_current_user
 
 router = APIRouter()
 

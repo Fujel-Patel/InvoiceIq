@@ -6,7 +6,7 @@
 
 InvoiceIQ is a full-stack invoice extraction application with a **FastAPI backend** and a **Next.js frontend**.
 
-- **Backend**: Python FastAPI (`fastapi_app/`) – invoice data extraction using multiple LLM providers (Claude, OpenAI, Gemini, Groq, OpenRouter) via vision APIs.
+- **Backend**: Python FastAPI (`backend/`) – invoice data extraction using multiple LLM providers (Claude, OpenAI, Gemini, Groq, OpenRouter) via vision APIs.
 - **Frontend**: Next.js 15 + TypeScript + Tailwind CSS (`frontend/`) – drag-and-drop upload, editable results table, export to CSV/Excel.
 - **Database**: Supabase (PostgreSQL + JWT auth). Tables: `extractions`, `llm_configs`.
 - **Architecture**: Standard 3-tier. API layer → Service layer (`services/`) → Model layer (`models/`). Uses FastAPI dependency injection extensively.
@@ -15,7 +15,7 @@ InvoiceIQ is a full-stack invoice extraction application with a **FastAPI backen
 
 ## Entry Points
 
-- **Backend**: `fastapi_app/app/main.py` (launches via `uvicorn fastapi_app.app.main:app`)
+- **Backend**: `backend/app/main.py` (launches via `uvicorn backend.app.main:app`)
 - **Frontend**: `frontend/app/page.tsx` (Next.js App Router)
 - **API Prefix**: All backend routes mounted under `/api/v1`
 
@@ -25,7 +25,7 @@ InvoiceIQ is a full-stack invoice extraction application with a **FastAPI backen
 
 ```bash
 # Backend (run from repo root)
-python3.12 -m uvicorn fastapi_app.app.main:app --host 0.0.0.0 --port 8765 --reload
+python3.12 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8765 --reload
 
 # Frontend (run from frontend/)
 cd frontend && npm run dev          # Next.js dev server
@@ -34,25 +34,25 @@ cd frontend && npm run dev          # Next.js dev server
 ruff check --fix .
 
 # Type check (backend)
-mypy --strict fastapi_app/
+mypy --strict backend/
 
 # Run backend test suite
-pytest fastapi_app/tests/ -v
+pytest backend/app/tests/ -v
 
 # Run a single test
 pytest path/to/test_file.py::test_name -v
 
 # Security scan (backend)
-bandit -r fastapi_app/
+bandit -r backend/
 ```
 
-> **Order for pre-commit gate**: `ruff check --fix .` → `mypy --strict fastapi_app/` → `pytest fastapi_app/tests/ -v`
+> **Order for pre-commit gate**: `ruff check --fix .` → `mypy --strict backend/` → `pytest backend/app/tests/ -v`
 
 ---
 
 ## High-Level Architecture
 
-### Backend (`fastapi_app/app/`)
+### Backend (`backend/app/`)
 
 | Directory | Responsibility |
 |-----------|----------------|
@@ -80,15 +80,15 @@ bandit -r fastapi_app/
 
 The backend supports multiple LLM providers. Provider selection is configured via `DEFAULT_LLM_PROVIDER` env var (default: `anthropic`) and falls back to whichever API key is available.
 
-- **Base class**: `fastapi_app/app/services/llm_interface.py` (`BaseLLMService`)
+- **Base class**: `backend/app/services/llm_interface.py` (`BaseLLMService`)
 - **Concrete implementations**: Also in `llm_interface.py` (Claude, OpenAI, Gemini, Groq, OpenRouter)
-- **Wrapper**: `fastapi_app/app/services/llm.py` (`ClaudeService`) maintains backward compatibility while delegating to the selected provider
+- **Wrapper**: `backend/app/services/llm.py` (`ClaudeService`) maintains backward compatibility while delegating to the selected provider
 
 ### Authentication
 
 - Production: JWT via Supabase (`HS256`, audience `"authenticated"`)
 - **Development**: `IS_DEVELOPMENT=true` or `.env` missing → bypasses auth, returns fixed `dev-user-id`
-- See `fastapi_app/app/utils/auth.py`
+- See `backend/app/utils/auth.py`
 
 ### File Upload Flow (`POST /api/v1/extract/upload`)
 
@@ -103,7 +103,7 @@ The backend supports multiple LLM providers. Provider selection is configured vi
 
 - Accepts `extraction_id` + `format` (`csv` or `excel`)
 - Returns `text/csv` with attachment headers or `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` for Excel
-- Implemented in `fastapi_app/app/api/v1/export.py`
+- Implemented in `backend/app/api/v1/export.py`
 
 ---
 
@@ -126,7 +126,7 @@ id (UUID, PK), user_id (TEXT), provider (TEXT, NOT NULL), api_key (TEXT, NOT NUL
 created_at (TIMESTAMPTZ, DEFAULT NOW()), updated_at (TIMESTAMPTZ, DEFAULT NOW())
 ```
 
-- Setup script: `fastapi_app/app/db/setup.py` (run manually, not on startup)
+- Setup script: `backend/app/db/setup.py` (run manually, not on startup)
 - Current behavior: DB setup is **intentionally skipped on startup** (see `main.py` `startup_event` comment). Tables are expected to exist already.
 
 ---
@@ -171,17 +171,17 @@ Optional overrides:
 - **Exceptions**: No bare `except:` – always catch specific exceptions
 - **Secrets**: Loaded via `python-dotenv` (`load_dotenv()`), never hard-coded
 - **Async**: All I/O is asynchronous
-- **Imports**: Use absolute imports throughout (e.g., `from fastapi_app.app.core.config import settings`)
+- **Imports**: Use absolute imports throughout (e.g., `from backend.app.core.config import settings`)
 
 ---
 
 ## Testing
 
-- Test directory: `fastapi_app/app/tests/` (mirrors `app/` structure)
+- Test directory: `backend/app/tests/` (mirrors `app/` structure)
 - Models: `tests/models/test_invoice.py`
 - Services: `tests/services/test_parser.py`
 - API: `tests/api/test_extract.py`
-- Run: `pytest fastapi_app/tests/ -v`
+- Run: `pytest backend/app/tests/ -v`
 
 ---
 
@@ -204,8 +204,8 @@ Optional overrides:
 ## Important Gotchas
 
 - **Dev auth bypass**: If `IS_DEVELOPMENT` is true, auth is completely bypassed. Be careful when testing auth-dependent features.
-- **Database startup**: `setup_database()` is commented out in `main.py` startup. Do not assume tables are auto-created. Use `fastapi_app/app/db/setup.py` manually if needed.
-- **Import paths**: Backend uses absolute imports (`fastapi_app.app...`), not relative. When creating new modules, follow this convention.
+- **Database startup**: `setup_database()` is commented out in `main.py` startup. Do not assume tables are auto-created. Use `backend/app/db/setup.py` manually if needed.
+- **Import paths**: Backend uses absolute imports (`backend.app...`), not relative. When creating new modules, follow this convention.
 - **LLM abstraction**: `ClaudeService` in `services/llm.py` is a *wrapper*, not the actual Claude implementation. The real provider logic lives in `services/llm_interface.py`.
-- **Supabase schema source of truth**: `fastapi_app/supabase_setup.sql` contains the canonical SQL. Keep it in sync with `app/models/extraction.py` (SQLAlchemy) and `app/db/setup.py` (Python setup script). See `CLAUDE.md` “Today’s Progress” for last schema sync details.
+- **Supabase schema source of truth**: `backend/supabase_setup.sql` contains the canonical SQL. Keep it in sync with `app/models/extraction.py` (SQLAlchemy) and `app/db/setup.py` (Python setup script). See `CLAUDE.md` “Today’s Progress” for last schema sync details.
 - **Multi-LLM support**: The app supports switching providers. The `llm_config` endpoint (`POST /api/v1/llm/config`) stores per-user provider preferences.

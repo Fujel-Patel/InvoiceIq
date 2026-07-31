@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Common Development Commands
 - **Run the full development environment**: `./scripts/dev.sh`
-- **Run backend only**: `python3.12 -m uvicorn fastapi_app.app.main:app --host 0.0.0.0 --port 8765 --reload`
+- **Run backend only**: `python3.12 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8765 --reload`
 - **Run frontend (Vite)**: `npm run dev` (from `frontend/`)
 - **Lint & auto‑fix**: `ruff check --fix .`
-- **Static type checking**: `mypy --strict fastapi_app/`
-- **Run backend test suite**: `pytest fastapi_app/tests/ -v`
+- **Static type checking**: `mypy --strict backend/`
+- **Run backend test suite**: `pytest backend/app/tests/ -v`
 - **Run a single test**: `pytest path/to/test_file.py::test_name -v`
-- **Security scan**: `bandit -r fastapi_app/`
+- **Security scan**: `bandit -r backend/`
 - **Install dependencies**: `pip install -r requirements.txt && cd frontend && npm install`
 - **Download required AI models**: `python scripts/download_models.py`
 - **Run database migrations**: `alembic upgrade head`
@@ -21,10 +21,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 For detailed file layout, see [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 
 - **Entry points**
-  - Backend: `fastapi_app/app/main.py` launches the FastAPI app via `uvicorn`.
+  - Backend: `backend/app/main.py` launches the FastAPI app via `uvicorn`.
   - Frontend: Next.js app located in `frontend/` directory.
 
-- **Core backend** (`fastapi_app/app/`)
+- **Core backend** (`backend/app/`)
   - `main.py` – FastAPI application entry point.
   - `core/` – configuration (`config.py`), database setup (`database.py`), and shared utilities.
   - `api/` – FastAPI router definitions, versioned under `v1/`:
@@ -97,12 +97,12 @@ For detailed file layout, see [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 - No bare `except:` – always catch specific exceptions.
 - Secrets are loaded via `python-dotenv` and never hard‑coded.
 - All I/O is asynchronous.
-- Before committing, run `ruff check --fix . && mypy --strict fastapi_app/ && pytest fastapi_app/tests/ -v`.
+- Before committing, run `ruff check --fix . && mypy --strict backend/ && pytest backend/app/tests/ -v`.
 
 ## Supabase Setup
 - The project uses Supabase for authentication and data storage.
-- Database tables are initialized via scripts in `fastapi_app/app/db/setup.py`.
-- Run `python fastapi_app/app/db/setup.py` to initialize tables manually if needed.
+- Database tables are initialized via scripts in `backend/app/db/setup.py`.
+- Run `python backend/app/db/setup.py` to initialize tables manually if needed.
 - Authentication is handled via Supabase SSR (Server-Side Rendering) package.
 - Middleware in `frontend/middleware.ts` protects routes requiring authentication.
 

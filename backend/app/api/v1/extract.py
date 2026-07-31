@@ -4,15 +4,15 @@ import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status as status_code
 
-from fastapi_app.app.core.config import settings
-from fastapi_app.app.models.invoice import ExtractedInvoice
-from fastapi_app.app.schemas.extraction import ExtractionResponse
-from fastapi_app.app.services.file_handler import FileHandler, validate_file, convert_to_base64, get_media_type
-from fastapi_app.app.services.llm import ClaudeService
-from fastapi_app.app.services.parser import parse_llm_response, determine_status
-from fastapi_app.app.services.db import DatabaseService
-from fastapi_app.app.utils.auth import get_current_user
-from fastapi_app.app.utils.validators import check_file_size, check_file_type
+from backend.app.core.config import settings
+from backend.app.models.invoice import ExtractedInvoice
+from backend.app.schemas.extraction import ExtractionResponse
+from backend.app.services.file_handler import FileHandler, validate_file, convert_to_base64, get_media_type
+from backend.app.services.llm import ClaudeService
+from backend.app.services.parser import parse_llm_response, determine_status
+from backend.app.services.db import DatabaseService
+from backend.app.utils.auth import get_current_user
+from backend.app.utils.validators import check_file_size, check_file_type
 
 router = APIRouter()
 

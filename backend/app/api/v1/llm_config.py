@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi_app.app.services.llm_config_service import LLMConfigService
-from fastapi_app.app.services.llm_verification_service import verify_llm_config
-from fastapi_app.app.models.llm_config import (
+from backend.app.services.llm_config_service import LLMConfigService
+from backend.app.services.llm_verification_service import verify_llm_config
+from backend.app.models.llm_config import (
     LLMConfigCreate,
     LLMConfigUpdate,
     LLMConfigResponse,

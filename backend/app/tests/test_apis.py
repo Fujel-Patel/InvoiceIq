@@ -60,8 +60,7 @@ def test_extract_upload_and_get():
     try:
         with open(image_path, "rb") as f:
             files = {"file": (os.path.basename(image_path), f, "image/png")}
-            headers = {"Authorization": "Bearer mock-token"}
-            response = httpx.post(f"{BASE_URL}/api/v1/extract/upload", files=files, headers=headers, timeout=60.0) # Corrected path
+            response = httpx.post(f"{BASE_URL}/extract/upload", files=files, timeout=60.0) # Increased timeout for potentially longer processing
 
         if response.status_code == 200:
             extraction_data = response.json()
@@ -71,8 +70,7 @@ def test_extract_upload_and_get():
                 logger.info("PASS: POST /extract/upload")
 
                 # Test GET /extract/{extraction_id}
-                headers = {"Authorization": "Bearer mock-token"}
-                get_response = httpx.get(f"{BASE_URL}/api/v1/extract/{extraction_id}", headers=headers) # Corrected path
+                get_response = httpx.get(f"{BASE_URL}/extract/{extraction_id}")
                 if get_response.status_code == 200:
                     extracted_data = get_response.json()
                     logger.debug(f"GET Response: {extracted_data}")
@@ -105,9 +103,8 @@ def test_update_extraction():
         "vendor_name": "Test Vendor Updated"
     }
 
-    headers = {"Authorization": "Bearer mock-token"}
     try:
-        response = httpx.put(f"{BASE_URL}/api/v1/extract/{extraction_id}", json=update_data, headers=headers) # Corrected path
+        response = httpx.put(f"{BASE_URL}/extract/{extraction_id}", json=update_data)
         if response.status_code == 200:
             updated_data = response.json()
             logger.debug(f"Response: {updated_data}")
@@ -128,8 +125,7 @@ def test_get_history():
     """Test GET /history endpoint."""
     logger.info("--- Testing GET /history ---")
     try:
-        headers = {"Authorization": "Bearer mock-token"}
-        response = httpx.get(f"{BASE_URL}/api/v1/history?user_id={TEST_USER_ID}", headers=headers) # Corrected path
+        response = httpx.get(f"{BASE_URL}/history?user_id={TEST_USER_ID}")
         if response.status_code == 200:
             history_data = response.json()
             logger.debug(f"Response: {history_data}")
@@ -159,8 +155,7 @@ def test_export_extraction():
     # Test CSV export
     csv_downloaded = False
     try:
-        headers = {"Authorization": "Bearer mock-token"}
-        response_csv = httpx.post(f"{BASE_URL}/api/v1/export?format=csv", json={"extraction_ids": [extraction_id]}, headers=headers) # Corrected path
+        response_csv = httpx.post(f"{BASE_URL}/export?format=csv", json={"extraction_ids": [extraction_id]})
         if response_csv.status_code == 200 and "text/csv" in response_csv.headers.get("content-type", ""):
             logger.debug(f"CSV Export Response Headers: {response_csv.headers}")
             logger.info("PASS: POST /export (CSV)")
@@ -173,8 +168,7 @@ def test_export_extraction():
     # Test Excel export
     excel_downloaded = False
     try:
-        headers = {"Authorization": "Bearer mock-token"}
-        response_excel = httpx.post(f"{BASE_URL}/api/v1/export?format=excel", json={"extraction_ids": [extraction_id]}, headers=headers) # Corrected path
+        response_excel = httpx.post(f"{BASE_URL}/export?format=excel", json={"extraction_ids": [extraction_id]})
         if response_excel.status_code == 200 and "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" in response_excel.headers.get("content-type", ""):
             logger.debug(f"Excel Export Response Headers: {response_excel.headers}")
             logger.info("PASS: POST /export (Excel)")
@@ -235,7 +229,7 @@ def run_tests():
         log_test_result("POST /export", False, error="Skipped due to previous test failure or missing extraction ID.")
 
     # --- Save results to file ---
-    output_filename = "fastapi_app/test_results.txt"
+    output_filename = "backend/app/tests/test_results.txt"
     try:
         with open(output_filename, "w") as f:
             f.write("--- API Test Results ---")

@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from fastapi_app.app.core.config import settings
+from backend.app.core.config import settings
 from .llm_config_service import LLMConfigService
 from .llm_interface import create_llm_service
 

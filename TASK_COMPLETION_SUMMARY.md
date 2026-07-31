@@ -19,7 +19,7 @@ Implement the following RESTful APIs for InvoiceIQ:
 - **POST /api/v1/export** - Complete with CSV and Excel export options
 
 ### Key Components:
-- **Centralized Models**: All Pydantic models in `fastapi_app/app/models/invoice.py`
+- **Centralized Models**: All Pydantic models in `backend/app/models/invoice.py`
   - LineItem, ExtractedInvoice, ExtractionResponse, HistoryItem, ExportRequest
 - **Service Layer**: Utilizes existing services (file_handler, llm, parser, db)
 - **Security**: User authorization checks on all data access endpoints
@@ -36,7 +36,7 @@ Implement the following RESTful APIs for InvoiceIQ:
 
 ### Files Created/Modified:
 ```
-fastapi_app/app/
+backend/app/
 ├── models/
 │   ├── invoice.py          # Centralized Pydantic models
 │   ├── extraction.py       # SQLAlchemy extraction model

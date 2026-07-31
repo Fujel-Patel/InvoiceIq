@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from fastapi_app.app.services.parser import (
+from backend.app.services.parser import (
     parse_llm_response,
     determine_status,
     _extract_json_from_text
 )
-from fastapi_app.app.models.invoice import ExtractedInvoice, LineItem
+from backend.app.models.invoice import ExtractedInvoice, LineItem
 
 
 def test_parse_llm_response_dict():

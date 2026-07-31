@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 # Test that the API imports work correctly
-from fastapi_app.app.api.v1.extract import router
-from fastapi_app.app.models.invoice import (
+from backend.app.api.v1.extract import router
+from backend.app.models.invoice import (
     LineItem,
     ExtractedInvoice,
     ExtractionResponse,

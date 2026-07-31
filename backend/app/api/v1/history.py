@@ -3,9 +3,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
 
-from fastapi_app.app.models.invoice import HistoryItem
-from fastapi_app.app.services.db import DatabaseService
-from fastapi_app.app.utils.auth import get_current_user
+from backend.app.models.invoice import HistoryItem
+from backend.app.services.db import DatabaseService
+from backend.app.utils.auth import get_current_user
 
 router = APIRouter()
 
