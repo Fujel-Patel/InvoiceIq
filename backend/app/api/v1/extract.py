@@ -17,6 +17,52 @@ from backend.app.utils.validators import check_file_size, check_file_type
 router = APIRouter()
 
 
+@router.post("/extract/direct-bill", status_code=status_code.HTTP_201_CREATED)
+async def create_direct_bill(
+    invoice: ExtractedInvoice,
+    db_service: DatabaseService = Depends(),
+    current_user: str = Depends(get_current_user)
+) -> ExtractionResponse:
+    """
+    Create a bill manually without uploading a file.
+
+    Args:
+        invoice: Manually entered invoice data
+        db_service: Service for database operations
+        current_user: ID of the authenticated user
+
+    Returns:
+        ExtractionResponse with the saved invoice data
+
+    Raises:
+        HTTPException: If the record cannot be saved
+    """
+    try:
+        # Generate extraction ID
+        extraction_id = str(uuid.uuid4())
+
+        # Save to database
+        extraction_record = await db_service.save_extraction(
+            extraction_id=extraction_id,
+            filename="direct-bill",
+            user_id=current_user,
+            data=invoice,
+            status="success"
+        )
+
+        return ExtractionResponse(
+            extraction_id=extraction_record["id"],
+            status="success",
+            data=invoice,
+            raw_text=None
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status_code.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred during processing: {str(e)}"
+        )
+
+
 @router.post("/extract/upload", status_code=status_code.HTTP_201_CREATED)
 async def upload_and_extract(
     file: UploadFile = File(...),
