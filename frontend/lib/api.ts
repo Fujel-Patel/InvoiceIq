@@ -126,7 +126,11 @@ export interface VerifyLLMResponse {
 
 // Axios Instance
 const api = axios.create({
-  baseURL: 'http://localhost:8765/api/v1',
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://invoiceiq-7wec.onrender.com/api/v1'
+      : 'http://localhost:8765/api/v1'),
 });
 
 api.interceptors.request.use(async (config) => {
