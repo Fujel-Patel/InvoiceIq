@@ -20,6 +20,8 @@ class ExtractedInvoice(BaseModel):
     tax: Optional[float] = None
     total_amount: Optional[float] = None
     currency: Optional[str] = None
+    entry_type: Optional[str] = None
+    amount_paid: Optional[float] = None
 
 class ExtractionResponse(BaseModel):
     extraction_id: str
@@ -33,6 +35,8 @@ class HistoryItem(BaseModel):
     extracted_at: str
     vendor_name: Optional[str] = None
     total_amount: Optional[float] = None
+    amount_paid: Optional[float] = None
+    balance_due: Optional[float] = None
     status: str
 
 class ExportRequest(BaseModel):

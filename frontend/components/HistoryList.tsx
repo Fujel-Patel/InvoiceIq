@@ -92,6 +92,13 @@ export default function HistoryList({ items }: HistoryListProps) {
                 <div className="text-left lg:text-right">
                   <p className="text-sm text-muted-foreground">Amount</p>
                   <p className="font-semibold">{formatCurrency(item.total_amount)}</p>
+                  {item.balance_due != null && item.balance_due > 0 ? (
+                    <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                      Balance: {formatCurrency(item.balance_due)}
+                    </p>
+                  ) : item.balance_due === 0 && item.total_amount != null ? (
+                    <p className="mt-1 text-xs font-medium text-green-600 dark:text-green-400">Paid</p>
+                  ) : null}
                 </div>
                 <Badge variant={statusVariants[item.status] || "outline"} className="capitalize">
                   {item.status}

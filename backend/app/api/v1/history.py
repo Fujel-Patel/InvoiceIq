@@ -42,13 +42,29 @@ async def get_user_history(
     # Convert to HistoryItem objects
     history_items = []
     for record in history_records:
-        extracted_data = record.get("extracted_data", {})
+        extracted_data = record.get("full_data") or record.get("extracted_data", {})
+        total_amount = (
+            extracted_data.get("total_amount")
+            if extracted_data.get("total_amount") is not None
+            else record.get("total_amount")
+        )
+        amount_paid = (
+            extracted_data.get("amount_paid")
+            if extracted_data.get("amount_paid") is not None
+            else record.get("amount_paid")
+        )
+        amount_paid = float(amount_paid) if amount_paid is not None else 0.0
+        balance_due = (
+            max(0.0, float(total_amount) - amount_paid) if total_amount is not None else None
+        )
         history_item = HistoryItem(
             extraction_id=record["id"],
             filename=record["filename"],
             extracted_at=record.get("created_at", ""),
-            vendor_name=extracted_data.get("vendor_name"),
-            total_amount=extracted_data.get("total_amount"),
+            vendor_name=extracted_data.get("vendor_name") or record.get("vendor_name"),
+            total_amount=total_amount,
+            amount_paid=round(amount_paid, 2) if amount_paid else None,
+            balance_due=round(balance_due, 2) if balance_due is not None else None,
             status=record.get("status", "unknown")
         )
         history_items.append(history_item)

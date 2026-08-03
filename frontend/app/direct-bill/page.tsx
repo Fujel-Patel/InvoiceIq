@@ -27,7 +27,8 @@ export default function DirectBillPage() {
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("INR");
+  const [entryType, setEntryType] = useState<"debit" | "credit">("debit");
   const [tax, setTax] = useState("");
   const [lineItems, setLineItems] = useState<EditableLineItem[]>([emptyLine]);
 
@@ -79,6 +80,8 @@ export default function DirectBillPage() {
       tax: taxValue || null,
       total_amount: total,
       currency: currency || null,
+      entry_type: entryType,
+      amount_paid: null,
     };
 
     setSaving(true);
@@ -169,8 +172,30 @@ export default function DirectBillPage() {
                   id="currency"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  placeholder="USD"
+                  placeholder="INR"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Entry Type</Label>
+                <div className="flex gap-2">
+                  {(["debit", "credit"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setEntryType(type)}
+                      className={
+                        "flex-1 rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors " +
+                        (entryType === type
+                          ? type === "credit"
+                            ? "border-green-500 bg-green-500/10 text-green-600 dark:text-green-400"
+                            : "border-primary bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted")
+                      }
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

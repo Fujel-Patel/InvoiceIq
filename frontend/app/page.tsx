@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, FileSearch, Zap, Shield, History, AlertTriangle, FilePlus2, CheckCircle2 } from "lucide-react";
+import { Sparkles, FileSearch, Zap, Shield, History, AlertTriangle, FilePlus2, CheckCircle2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
@@ -14,7 +14,7 @@ import UploadActions from "@/components/UploadActions";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { getLLMConfig } from "@/lib/api";
+import { getLLMConfig, logout } from "@/lib/api";
 
 interface LLMConfigState {
   provider: string;
@@ -34,6 +34,7 @@ export default function Home() {
   const [checking, setChecking] = React.useState(true);
   const [config, setConfig] = React.useState<LLMConfigState | null>(null);
   const router = useRouter();
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
     const checkAuth = async () => {
@@ -54,12 +55,19 @@ export default function Home() {
   }, [router]);
 
   React.useEffect(() => {
+    abortControllerRef.current = new AbortController();
+    const controller = abortControllerRef.current;
     const checkConfig = () => {
-      getLLMConfig().then((cfg) => setConfig(cfg));
+      getLLMConfig(controller.signal)
+        .then((cfg) => setConfig(cfg))
+        .catch(() => {});
     };
     checkConfig();
     window.addEventListener("focus", checkConfig);
-    return () => window.removeEventListener("focus", checkConfig);
+    return () => {
+      controller.abort();
+      window.removeEventListener("focus", checkConfig);
+    };
   }, []);
 
   const hasLLMConfig = config !== null;
@@ -98,6 +106,14 @@ export default function Home() {
               History
             </Link>
             <Link
+              href="/analytics"
+              aria-label="View bill analytics"
+              className={navLinkClass("/analytics")}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </Link>
+            <Link
               href="/settings"
               aria-label="LLM configuration settings"
               className={navLinkClass("/settings")}
@@ -106,8 +122,10 @@ export default function Home() {
               Settings
             </Link>
             <ThemeToggle />
-            <Button variant="ghost" size="sm" aria-label="Sign out" onClick={async () => {
-              try { await supabase.auth.signOut(); } catch { /* Supabase unreachable */ }
+            <Button variant="ghost" size="sm" aria-label="Sign out" onClick={() => {
+              abortControllerRef.current?.abort();
+              logout().catch(() => {});
+              Promise.resolve(supabase.auth.signOut()).catch(() => {});
               router.replace('/login');
             }}>
               Sign Out

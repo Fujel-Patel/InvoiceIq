@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from loguru import logger
 from supabase import create_client, Client
@@ -39,6 +40,7 @@ class DatabaseService:
             "filename": filename,
             "user_id": user_id,
             "status": status,
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "vendor_name": data.vendor_name,
             "invoice_number": data.invoice_number,
             "invoice_date": data.invoice_date,
@@ -47,6 +49,8 @@ class DatabaseService:
             "tax": data.tax,
             "total_amount": data.total_amount,
             "currency": data.currency,
+            "entry_type": data.entry_type,
+            "amount_paid": data.amount_paid,
             "full_data": data.model_dump() if hasattr(data, 'model_dump') else data.dict(),
         }
 
@@ -103,6 +107,8 @@ class DatabaseService:
             "tax": data.tax,
             "total_amount": data.total_amount,
             "currency": data.currency,
+            "entry_type": data.entry_type,
+            "amount_paid": data.amount_paid,
             "full_data": data.model_dump() if hasattr(data, 'model_dump') else data.dict(),
             "updated_at": "now()"
         }

@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-from .api.v1 import extract, history, export, llm_config
+from .api.v1 import analytics, auth, extract, history, export, llm_config
 from .core.config import settings
 from .core.logging import setup_logging
 from .routes import settings as settings_routes
@@ -51,6 +51,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Include routers
 app.include_router(
+    auth.router,
+    prefix=settings.API_V1_STR,
+    tags=["auth"]
+)
+app.include_router(
     extract.router,
     prefix=settings.API_V1_STR,
     tags=["extract"]
@@ -59,6 +64,11 @@ app.include_router(
     history.router,
     prefix=settings.API_V1_STR,
     tags=["history"]
+)
+app.include_router(
+    analytics.router,
+    prefix=settings.API_V1_STR,
+    tags=["analytics"]
 )
 app.include_router(
     export.router,

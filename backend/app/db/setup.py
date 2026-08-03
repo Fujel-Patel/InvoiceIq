@@ -46,6 +46,8 @@ def setup_database() -> bool:
           tax            FLOAT,
           total_amount   FLOAT,
           currency       TEXT,
+          entry_type     TEXT,
+          amount_paid    FLOAT,
           full_data      JSONB NOT NULL,
           created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
           updated_at     TIMESTAMP WITH TIME ZONE

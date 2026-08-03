@@ -28,6 +28,18 @@ const statusColors: Record<string, string> = {
   gray: "bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300",
 };
 
+function PaymentStatusBadge({ amountPaid, total }: { amountPaid: number | null; total: number | null }) {
+  if (total == null) return null;
+  const paid = amountPaid ?? 0;
+  if (paid >= total) {
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300">Paid</Badge>;
+  }
+  if (paid > 0) {
+    return <Badge variant="secondary">Partial</Badge>;
+  }
+  return <Badge variant="outline">Unpaid</Badge>;
+}
+
 export default function DataTable({ extractionId, data, status, filename }: DataTableProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -72,6 +84,21 @@ export default function DataTable({ extractionId, data, status, filename }: Data
   const handleCancel = () => {
     setFormData(data);
     setIsEditing(false);
+  };
+
+  const handleMarkPaid = async () => {
+    if (formData.total_amount == null) return;
+    setIsSaving(true);
+    try {
+      await updateExtraction(extractionId, { ...formData, amount_paid: formData.total_amount });
+      setFormData((prev) => ({ ...prev, amount_paid: prev.total_amount }));
+      toast.success("Marked as fully paid!");
+    } catch (error) {
+      toast.error("Failed to mark as paid.");
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -127,6 +154,85 @@ export default function DataTable({ extractionId, data, status, filename }: Data
                 )}
               </div>
             ))}
+            <div className="space-y-2">
+              <Label>Entry Type</Label>
+              {isEditing ? (
+                <div className="flex gap-2">
+                  {(["debit", "credit"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, entry_type: type }))}
+                      className={cn(
+                        "flex-1 rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors",
+                        formData.entry_type === type
+                          ? type === "credit"
+                            ? "border-green-500 bg-green-500/10 text-green-600 dark:text-green-400"
+                            : "border-primary bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted"
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm">
+                  {formData.entry_type ? (
+                    <Badge className={formData.entry_type === "credit" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : ""}>
+                      {formData.entry_type}
+                    </Badge>
+                  ) : (
+                    <Badge>debit</Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold">Payment</h3>
+                <PaymentStatusBadge amountPaid={formData.amount_paid} total={formData.total_amount} />
+              </div>
+              {!isEditing && formData.total_amount != null && (formData.amount_paid ?? 0) < formData.total_amount && (
+                <Button variant="outline" size="sm" onClick={handleMarkPaid} disabled={isSaving}>
+                  {isSaving ? "Saving..." : <><Check className="w-4 h-4 mr-2" /> Mark as Paid</>}
+                </Button>
+              )}
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Total Amount</Label>
+                <p className="text-lg font-semibold">{formatCurrency(formData.total_amount, formData.currency || "INR")}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Amount Paid</Label>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={formData.amount_paid ?? ""}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, amount_paid: e.target.value === "" ? null : parseFloat(e.target.value) }))}
+                  />
+                ) : (
+                  <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                    {formatCurrency(formData.amount_paid ?? 0, formData.currency || "INR")}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Balance Due</Label>
+                <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                  {formatCurrency(
+                    formData.total_amount != null ? Math.max(0, formData.total_amount - (formData.amount_paid ?? 0)) : null,
+                    formData.currency || "INR"
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
 
           <Separator />

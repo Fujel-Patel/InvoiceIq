@@ -24,6 +24,8 @@ class Extraction(Base):
     tax = Column(Float, nullable=True)
     total_amount = Column(Float, nullable=True)
     currency = Column(String(10), nullable=True)
+    entry_type = Column(String(10), nullable=True)
+    amount_paid = Column(Float, nullable=True)
     full_data = Column(JSONB, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

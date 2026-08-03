@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const protectedPaths = ['/history', '/result', '/settings'];
+  const protectedPaths = ['/history', '/result', '/settings', '/analytics'];
   const authPaths = ['/login', '/signup'];
 
   const isAuthPath = authPaths.includes(request.nextUrl.pathname);
@@ -58,7 +58,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (session && isAuthPath) {
+  // In dev mode the client keeps a fake in-memory session that the middleware
+  // cannot see, so never bounce users off /login or /signup here.
+  const hasRealSession = process.env.NEXT_PUBLIC_IS_DEVELOPMENT !== 'true' && session;
+  if (hasRealSession && isAuthPath) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
@@ -71,6 +74,7 @@ export const config = {
     '/history/:path*',
     '/result/:path*',
     '/settings',
+    '/analytics',
     '/login',
     '/signup',
   ],
