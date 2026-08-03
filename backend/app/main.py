@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+import os
+import sys
 import time
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from loguru import logger
+# Ensure the repository root is importable when the app is started from inside
+# the backend/ directory (e.g. `uvicorn app.main:app` on Render).
+# Absolute imports (`from backend.app...`) are used throughout this project.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
-from .api.v1 import analytics, auth, extract, history, export, llm_config
-from .core.config import settings
-from .core.logging import setup_logging
-from .routes import settings as settings_routes
+from fastapi import FastAPI, Request  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from loguru import logger  # noqa: E402
+
+from .api.v1 import analytics, auth, extract, history, export, llm_config  # noqa: E402
+from .core.config import settings  # noqa: E402
+from .core.logging import setup_logging  # noqa: E402
+from .routes import settings as settings_routes  # noqa: E402
 
 setup_logging()
 
