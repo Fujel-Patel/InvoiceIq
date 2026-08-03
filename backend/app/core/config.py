@@ -51,6 +51,16 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
     SUPABASE_JWT_SECRET: str = Field(..., env="SUPABASE_JWT_SECRET")
 
+    # CORS
+    CORS_ORIGINS: List[str] = Field(
+        default=["http://localhost:3000"],
+        env="CORS_ORIGINS",
+    )
+    CORS_ORIGIN_REGEX: str = Field(
+        default=r"^https://[a-zA-Z0-9-]+\.vercel\.app$",
+        env="CORS_ORIGIN_REGEX",
+    )
+
     # File Upload
     MAX_FILE_SIZE_MB: int = Field(default=10, env="MAX_FILE_SIZE_MB")
     ALLOWED_TYPES: List[str] = ["image/jpeg", "image/png", "application/pdf"]
