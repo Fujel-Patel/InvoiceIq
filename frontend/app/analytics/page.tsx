@@ -97,8 +97,8 @@ function TrendChart({ data, currency, accent }: { data: AnalyticsPeriod[]; curre
               background: "hsl(var(--card))",
               fontSize: 13,
             }}
-            formatter={(value: any) => [formatCurrency(Number(value), currency), "Total"]}
-            labelFormatter={(label: any) => `${String(label)} · ${data.find((d) => d.period === label)?.count ?? 0} bill(s)`}
+            formatter={(value: unknown) => [formatCurrency(Number(value), currency), "Total"]}
+            labelFormatter={(label: unknown) => `${String(label)} · ${data.find((d) => d.period === label)?.count ?? 0} bill(s)`}
           />
           <Bar dataKey="total" fill={accent} radius={[6, 6, 0, 0]} maxBarSize={48} />
         </BarChart>
@@ -139,7 +139,7 @@ function VendorChart({ vendors, currency }: { vendors: AnalyticsVendor[]; curren
               background: "hsl(var(--card))",
               fontSize: 13,
             }}
-            formatter={(value: any) => [formatCurrency(Number(value), currency), "Total"]}
+            formatter={(value: unknown) => [formatCurrency(Number(value), currency), "Total"]}
           />
           <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} maxBarSize={18} />
         </BarChart>

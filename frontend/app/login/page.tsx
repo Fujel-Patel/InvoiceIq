@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
+import { getApiErrorMessage } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -48,8 +49,8 @@ export default function LoginPage() {
       } else {
         toast.error('Login successful, but session was not established.');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'An unexpected error occurred.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,7 @@ export default function LoginPage() {
             </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-primary hover:underline">
               Sign Up
             </Link>

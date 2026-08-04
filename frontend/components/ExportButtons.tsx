@@ -7,7 +7,6 @@ import { FileText, FileSpreadsheet, Loader2 } from "lucide-react";
 import { exportExtraction } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 interface ExportButtonsProps {
   extractionId: string;
@@ -24,7 +23,7 @@ export default function ExportButtons({ extractionId }: ExportButtonsProps) {
     try {
       await exportExtraction(extractionId, format);
       toast.success(`${format.toUpperCase()} downloaded!`);
-    } catch (error) {
+    } catch {
       toast.error("Export failed. Try again.");
     } finally {
       if (format === "csv") setCsvLoading(false);

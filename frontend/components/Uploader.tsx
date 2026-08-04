@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
+import { useDropzone, type FileRejection } from "react-dropzone";
 import { useRouter } from "next/navigation";
 import { UploadCloud, X, Loader2, FileText, Image as ImageIcon, File } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { uploadInvoice } from "@/lib/api";
+import { uploadInvoice, getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ export default function Uploader({ hasLLMConfig = true }: { hasLLMConfig?: boole
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
       const error = fileRejections[0].errors[0];
       if (error.code === "file-too-large") {
@@ -59,8 +59,8 @@ export default function Uploader({ hasLLMConfig = true }: { hasLLMConfig?: boole
       const result = await uploadInvoice(file);
       toast.success("Extraction successful!");
       router.push(`/result/${result.extraction_id}`);
-    } catch (error: any) {
-      const detail = error?.response?.data?.detail || error?.message || "";
+    } catch (error) {
+      const detail = getApiErrorMessage(error);
       if (detail.includes("No API key configured") || detail.includes("LLM configuration")) {
         toast.error("Configure an LLM provider in Settings first");
         router.push("/settings");

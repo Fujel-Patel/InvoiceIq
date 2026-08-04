@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Plus, Trash2, Save, Loader2, FilePlus2 } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
-import { createDirectBill, type ExtractedInvoice, type LineItem } from "@/lib/api";
+import { createDirectBill, getApiErrorMessage, type ExtractedInvoice, type LineItem } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -89,8 +88,8 @@ export default function DirectBillPage() {
       const result = await createDirectBill(invoice);
       toast.success("Direct bill created!");
       router.push(`/result/${result.extraction_id}`);
-    } catch (error: any) {
-      const detail = error?.response?.data?.detail || error?.message || "";
+    } catch (error) {
+      const detail = getApiErrorMessage(error);
       if (detail.includes("No API key configured") || detail.includes("LLM configuration")) {
         toast.error("Configure an LLM provider in Settings first");
         router.push("/settings");

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Save, Edit2, X, Check } from "lucide-react";
+import { Edit2, X, Check } from "lucide-react";
 import { ExtractedInvoice, updateExtraction } from "@/lib/api";
 import { formatCurrency, formatDate, formatStatus, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

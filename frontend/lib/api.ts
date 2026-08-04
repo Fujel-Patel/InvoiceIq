@@ -146,6 +146,19 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+export function getApiErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === "string") return detail;
+    if (detail && typeof detail === "object" && "msg" in detail) {
+      const msg = (detail as { msg?: unknown }).msg;
+      if (typeof msg === "string") return msg;
+    }
+    return error.message;
+  }
+  return error instanceof Error ? error.message : "";
+}
+
 /**
  * Uploads an invoice file for extraction.
  */
@@ -185,11 +198,8 @@ export async function updateExtraction(id: string, data: Partial<ExtractedInvoic
  * Retrieves extraction history for a user.
  */
 export async function getHistory(user_id?: string): Promise<HistoryItem[]> {
-  let requestConfig = {} as any;
-if (user_id !== undefined) {
-  requestConfig.params = { user_id };
-}
-const response = await api.get<HistoryItem[]>('/history', requestConfig);
+  const requestConfig = user_id !== undefined ? { params: { user_id } } : undefined;
+  const response = await api.get<HistoryItem[]>('/history', requestConfig);
   return response.data;
 }
 

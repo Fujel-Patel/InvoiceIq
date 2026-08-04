@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
+import { getApiErrorMessage } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
@@ -44,8 +45,8 @@ export default function SignupPage() {
 
       toast.success('Signed up successfully! Please check your email for verification.');
       router.replace('/login');
-    } catch (err: any) {
-      toast.error(err.message || 'An unexpected error occurred.');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }

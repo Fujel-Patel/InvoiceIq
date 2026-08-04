@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, UploadCloud, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadInvoice } from "@/lib/api";
+import { uploadInvoice, getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface UploadActionsProps {
@@ -37,8 +37,8 @@ export default function UploadActions({ hasLLMConfig = true }: UploadActionsProp
       const result = await uploadInvoice(file);
       toast.success("Extraction successful!");
       router.push(`/result/${result.extraction_id}`);
-    } catch (error: any) {
-      const detail = error?.response?.data?.detail || error?.message || "";
+    } catch (error) {
+      const detail = getApiErrorMessage(error);
       if (detail.includes("No API key configured") || detail.includes("LLM configuration")) {
         toast.error("Configure an LLM provider in Settings first");
         router.push("/settings");

@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, AlertCircle, RefreshCw, History, Zap } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import Link from "next/link";
 import { getExtraction } from "@/lib/api";
 import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const queryClient = new QueryClient();

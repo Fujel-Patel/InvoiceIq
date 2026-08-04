@@ -4,7 +4,7 @@ const isDev = process.env.NEXT_PUBLIC_IS_DEVELOPMENT === 'true'
 
 let devSignedOut = false
 
-function createDevClient() {
+function createDevClient(): ReturnType<typeof createBrowserClient> {
   const noop = () => ({ data: { session: null }, error: null })
   const noopSubscription = { unsubscribe: () => {} }
   const fakeSession = {
@@ -28,7 +28,7 @@ function createDevClient() {
         return { data: { session: fakeSession, user: fakeSession.user }, error: null }
       },
     },
-  } as any
+  } as unknown as ReturnType<typeof createBrowserClient>
 }
 
 export function createClient() {

@@ -52,7 +52,7 @@ export default function LLMConfigPage() {
     try {
       await saveLLMConfig({ provider, api_key: apiKey, model });
       toast.success("LLM configuration saved");
-    } catch (e) {
+    } catch {
       toast.error("Failed to save LLM configuration");
     } finally {
       setLoading(false);
@@ -67,7 +67,7 @@ export default function LLMConfigPage() {
       setApiKey("");
       setModel("");
       toast.success("LLM configuration deleted");
-    } catch (e) {
+    } catch {
       toast.error("Failed to delete configuration");
     } finally {
       setLoading(false);
