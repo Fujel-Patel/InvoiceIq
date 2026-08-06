@@ -17,6 +17,9 @@ class LLMConfigService:
     def __init__(self):
         self.supabase: Optional[Client] = None
         self.table_name = "llm_configs"
+        if settings.IS_DEVELOPMENT:
+            logger.info("[dev-auth] LLMConfigService using local store (no Supabase)")
+            return
         try:
             self.supabase = create_client(
                 settings.SUPABASE_URL,
