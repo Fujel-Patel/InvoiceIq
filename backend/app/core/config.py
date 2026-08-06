@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     IS_DEVELOPMENT: bool = Field(default=True, env="IS_DEVELOPMENT")
 
+    # Auth
+    # When True, new accounts must confirm their email before they can sign in.
+    EMAIL_CONFIRMATION_REQUIRED: bool = Field(default=False, env="EMAIL_CONFIRMATION_REQUIRED")
+
     # LLM Provider Settings
     # Anthropic (Claude)
     ANTHROPIC_API_KEY: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
@@ -53,7 +57,7 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: List[str] = Field(
-        default=["http://localhost:3000"],
+        default=["http://localhost:3000", "http://localhost:3001"],
         env="CORS_ORIGINS",
     )
     CORS_ORIGIN_REGEX: str = Field(

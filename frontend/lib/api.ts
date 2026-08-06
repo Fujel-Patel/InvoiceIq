@@ -148,8 +148,15 @@ api.interceptors.request.use(async (config) => {
 
 export function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const detail = error.response?.data?.detail;
+    const detail = (error.response?.data as { detail?: unknown } | undefined)?.detail;
     if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      const first = detail[0];
+      if (first && typeof first === "object" && "msg" in first) {
+        const msg = (first as { msg?: unknown }).msg;
+        if (typeof msg === "string") return msg;
+      }
+    }
     if (detail && typeof detail === "object" && "msg" in detail) {
       const msg = (detail as { msg?: unknown }).msg;
       if (typeof msg === "string") return msg;
@@ -157,6 +164,26 @@ export function getApiErrorMessage(error: unknown): string {
     return error.message;
   }
   return error instanceof Error ? error.message : "";
+}
+
+export interface ApiFieldError {
+  loc: string[];
+  msg: string;
+}
+
+export function getApiFieldErrors(error: unknown): ApiFieldError[] {
+  if (!axios.isAxiosError(error)) return [];
+  const detail = (error.response?.data as { detail?: unknown } | undefined)?.detail;
+  if (!Array.isArray(detail)) return [];
+  return detail
+    .filter(
+      (item): item is { loc: string[]; msg: string } =>
+        typeof item === "object" &&
+        item !== null &&
+        Array.isArray((item as { loc?: unknown }).loc) &&
+        typeof (item as { msg?: unknown }).msg === "string"
+    )
+    .map((item) => ({ loc: item.loc, msg: item.msg }));
 }
 
 /**
@@ -260,6 +287,57 @@ export async function verifyLLMConfig(config: VerifyLLMRequest): Promise<VerifyL
 
 export async function deleteLLMConfig(): Promise<void> {
   await api.delete('/llm/config');
+}
+
+// Auth Functions
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user: AuthUser;
+}
+
+export interface SignupResponse {
+  user_id: string;
+  email: string;
+  email_confirmed: boolean;
+  message: string;
+}
+
+export interface MeResponse {
+  user_id: string;
+  email: string | null;
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>("/auth/login", { email, password });
+  return response.data;
+}
+
+export async function signup(email: string, password: string): Promise<SignupResponse> {
+  const response = await api.post<SignupResponse>("/auth/signup", { email, password });
+  return response.data;
+}
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const response = await api.post<{ message: string }>("/auth/forgot-password", { email });
+  return response.data;
+}
+
+export async function resetPassword(password: string, token: string): Promise<{ message: string }> {
+  const response = await api.post<{ message: string }>("/auth/reset-password", { password, token });
+  return response.data;
+}
+
+export async function getMe(): Promise<MeResponse> {
+  const response = await api.get<MeResponse>("/auth/me");
+  return response.data;
 }
 
 export async function logout(): Promise<void> {

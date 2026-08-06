@@ -1,101 +1,185 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { supabase } from '@/lib/supabaseClient';
-import { getApiErrorMessage } from '@/lib/api';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import AuthLayout from "@/components/AuthLayout";
+import PasswordStrength from "@/components/PasswordStrength";
+import { getApiFieldErrors, signup } from "@/lib/api";
+import { getAuthErrorMessage } from "@/lib/authErrors";
+import { isPasswordValid, isValidEmail } from "@/lib/validation";
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
 export default function SignupPage() {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const handleSignup = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const nextErrors: FormErrors = {};
+    if (!isValidEmail(email)) nextErrors.email = "Please enter a valid email address.";
+    if (!isPasswordValid(password)) {
+      nextErrors.password = "Password does not meet all the requirements below.";
+    }
+    if (confirmPassword !== password) nextErrors.confirmPassword = "Passwords do not match.";
+    if (!acceptedTerms) {
+      toast.error("Please accept the Terms & Privacy Policy to continue.");
+      return;
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     setLoading(true);
-
     try {
-
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes('already registered')) {
-          toast.error('This email is already registered. Please login instead.');
-        } else if (error.message.includes('network')) {
-          toast.error('Network error. Please check your connection and try again.');
-        } else if (error.message.includes('password')) {
-          toast.error('Password does not meet the requirements. Please try a stronger password.');
-        } else {
-          toast.error(error.message || 'An unexpected error occurred during sign up.');
-        }
-        return;
-      }
-
-      toast.success('Signed up successfully! Please check your email for verification.');
-      router.replace('/login');
+      const data = await signup(email.trim().toLowerCase(), password);
+      toast.success(data.message);
+      router.replace("/login");
     } catch (error) {
-      toast.error(getApiErrorMessage(error) || 'An unexpected error occurred.');
+      const fieldErrors = getApiFieldErrors(error);
+      if (fieldErrors.length > 0) {
+        const inlineErrors: FormErrors = {};
+        for (const fieldError of fieldErrors) {
+          const field = fieldError.loc[fieldError.loc.length - 1];
+          if (field === "email") inlineErrors.email = fieldError.msg;
+          if (field === "password") inlineErrors.password = fieldError.msg;
+        }
+        if (Object.keys(inlineErrors).length > 0) {
+          setErrors(inlineErrors);
+          return;
+        }
+      }
+      toast.error(getAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Sign Up for InvoiceIQ</CardTitle>
-          <CardDescription>Create your account to get started.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign Up
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
-              Login
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthLayout
+      title="Create your account"
+      description="Sign up in seconds — no credit card required."
+    >
+      <form onSubmit={handleSignup} className="space-y-4" noValidate>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              aria-invalid={Boolean(errors.email)}
+              className="pl-9"
+            />
+          </div>
+          {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Create a strong password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              aria-invalid={Boolean(errors.password)}
+              className="pl-9 pr-9"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+          <PasswordStrength password={password} />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm-password">Confirm password</Label>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="confirm-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Re-enter your password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              aria-invalid={Boolean(errors.confirmPassword)}
+              className="pl-9"
+            />
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+          )}
+        </div>
+
+        <Checkbox
+          id="terms"
+          checked={acceptedTerms}
+          onCheckedChange={setAcceptedTerms}
+          label={
+            <span className="text-sm text-muted-foreground">
+              I agree to the{" "}
+              <a href="#" className="font-medium text-primary underline-offset-4 hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="#" className="font-medium text-primary underline-offset-4 hover:underline">
+                Privacy Policy
+              </a>
+            </span>
+          }
+        />
+
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+          disabled={loading || !acceptedTerms}
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Create Account
+        </Button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+          Login
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }
