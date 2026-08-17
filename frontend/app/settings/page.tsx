@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   getLLMConfig,
@@ -15,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, CheckCircle2, XCircle, Loader2, ArrowLeft, Sparkles, Zap, Shield, Brain } from "lucide-react";
-import Link from "next/link";
+import { Header } from "@/components/Header";
 
 interface ProviderInfo {
   value: string;
@@ -65,6 +66,7 @@ interface LLMConfigResponse {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -154,15 +156,15 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-muted/20">
+      <Header />
+
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
+        {/* Back button in content area */}
+        <div className="mb-6 sm:hidden">
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="w-full justify-start">
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back
-          </Link>
+          </Button>
         </div>
 
         {/* SECTION 1: Current Config Status Card */}
@@ -237,7 +239,7 @@ export default function SettingsPage() {
                     setIsVerified(false);
                   }}
                   className={cn(
-                    "flex flex-col items-start gap-2 p-4 rounded-lg border-2 transition-all text-left",
+                    "flex flex-col items-start gap-3 p-4 rounded-lg border-2 transition-all text-left min-h-[140px]",
                     provider === p.value
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/50"
@@ -247,10 +249,10 @@ export default function SettingsPage() {
                     <span className={cn("text-primary", provider === p.value && "")}>{p.icon}</span>
                     <span className="font-medium">{p.label}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">{p.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-auto">
                     {p.models.map((m) => (
-                      <Badge key={m} variant="outline" className="text-[10px] px-1.5 py-0">
+                      <Badge key={m} variant="outline" className="text-[10px] px-1.5 py-0 whitespace-nowrap">
                         {m}
                       </Badge>
                     ))}

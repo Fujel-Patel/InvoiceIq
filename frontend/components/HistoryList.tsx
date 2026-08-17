@@ -65,45 +65,45 @@ export default function HistoryList({ items }: HistoryListProps) {
             className="group w-full cursor-pointer overflow-hidden border-border/60 bg-card/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             onClick={() => router.push(`/result/${item.extraction_id}`)}
           >
-            <CardContent className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div className="flex min-w-0 items-start gap-4">
-                <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                  <FileText className="h-6 w-6 shrink-0" />
+            <CardContent className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                <div className="rounded-xl bg-primary/10 p-2.5 text-primary shrink-0">
+                  <FileText className="h-5 w-5 shrink-0" />
                 </div>
-                <div className="min-w-0 space-y-2">
-                  <p className="truncate text-base font-medium leading-tight">
-                    {item.filename.length > 30 ? `${item.filename.substring(0, 30)}...` : item.filename}
+                <div className="min-w-0 space-y-1.5">
+                  <p className="truncate text-sm sm:text-base font-medium leading-tight">
+                    {item.filename.length > 25 ? `${item.filename.substring(0, 25)}...` : item.filename}
                   </p>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-muted-foreground">
                     <span className="inline-flex min-w-0 items-center gap-1.5 truncate">
-                      <Building2 className="h-3.5 w-3.5 shrink-0" />
+                      <Building2 className="h-3 w-3 shrink-0" />
                       <span className="truncate">{item.vendor_name || "Unknown Vendor"}</span>
                     </span>
                     <span className="hidden sm:inline">•</span>
                     <span className="inline-flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 shrink-0" />
+                      <Clock className="h-3 w-3 shrink-0" />
                       {formatDate(item.extracted_at)}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                <div className="text-left lg:text-right">
-                  <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="font-semibold">{formatCurrency(item.total_amount)}</p>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:justify-end">
+                <div className="text-left sm:text-right">
+                  <p className="text-xs text-muted-foreground">Amount</p>
+                  <p className="font-semibold text-base">{formatCurrency(item.total_amount)}</p>
                   {item.balance_due != null && item.balance_due > 0 ? (
-                    <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                    <p className="mt-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
                       Balance: {formatCurrency(item.balance_due)}
                     </p>
                   ) : item.balance_due === 0 && item.total_amount != null ? (
-                    <p className="mt-1 text-xs font-medium text-green-600 dark:text-green-400">Paid</p>
+                    <p className="mt-0.5 text-xs font-medium text-green-600 dark:text-green-400">Paid</p>
                   ) : null}
                 </div>
-                <Badge variant={statusVariants[item.status] || "outline"} className="capitalize">
+                <Badge variant={statusVariants[item.status] || "outline"} className="capitalize text-xs py-1 px-2">
                   {item.status}
                 </Badge>
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </div>
             </CardContent>
           </Card>

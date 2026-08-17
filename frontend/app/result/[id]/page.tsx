@@ -11,6 +11,7 @@ import DataTable from "@/components/DataTable";
 import ExportButtons from "@/components/ExportButtons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Header } from "@/components/Header";
 
 const queryClient = new QueryClient();
 
@@ -96,26 +97,14 @@ function ResultContent() {
 }
 
 export default function ResultPage() {
-  const router = useRouter();
-
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-muted/20">
         <Toaster position="top-right" richColors />
 
-        <nav className="border-b bg-background sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-            <h1 className="font-bold text-lg">Extraction Result</h1>
-            <Link href="/history" className="text-sm font-medium text-muted-foreground hover:text-primary flex items-center gap-1">
-              <History className="w-4 h-4" /> History
-            </Link>
-          </div>
-        </nav>
+        <Header />
 
-        <main className="max-w-7xl mx-auto px-6 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <ResultContent />
         </main>
       </div>

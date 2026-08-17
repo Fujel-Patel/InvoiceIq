@@ -10,16 +10,25 @@ export function cn(...inputs: ClassValue[]): string {
 
 /**
  * Formats a number as currency. Returns "N/A" if amount is invalid.
+ * Falls back to INR if currency code is invalid.
  */
 export function formatCurrency(
   amount: number | null | undefined,
   currency: string = "INR"
 ): string {
   if (amount == null) return "N/A";
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: currency,
-  }).format(amount);
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: currency,
+    }).format(amount);
+  } catch {
+    // Fallback to INR if currency code is invalid
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
+  }
 }
 
 /**

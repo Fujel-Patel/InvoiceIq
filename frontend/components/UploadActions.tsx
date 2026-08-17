@@ -58,7 +58,7 @@ export default function UploadActions({ hasLLMConfig = true }: UploadActionsProp
   );
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Hidden file inputs */}
       <input
         ref={cameraInputRef}
@@ -86,29 +86,29 @@ export default function UploadActions({ hasLLMConfig = true }: UploadActionsProp
 
       <button
         type="button"
-        className={cn(buttonBase, "border-muted-foreground/20 hover:border-primary/50")}
+        className={cn(buttonBase, "border-muted-foreground/20 hover:border-primary/50", "sm:flex-col sm:gap-3")}
         onClick={() => cameraInputRef.current?.click()}
         disabled={isUploading || !hasLLMConfig}
         aria-label="Take a photo of your invoice"
       >
-        <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-          <Camera className="w-6 h-6 text-secondary" />
+        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+          <Camera className="w-5 h-5 text-secondary" />
         </div>
         <span className="text-sm font-medium">Camera</span>
       </button>
 
       <button
         type="button"
-        className={cn(buttonBase, "border-muted-foreground/20 hover:border-primary/50")}
+        className={cn(buttonBase, "border-muted-foreground/20 hover:border-primary/50", "sm:flex-col sm:gap-3")}
         onClick={() => fileInputRef.current?.click()}
         disabled={isUploading || !hasLLMConfig}
         aria-label="Upload an invoice file"
       >
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
           {isUploading ? (
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            <Loader2 className="w-5 h-5 text-primary animate-spin" />
           ) : (
-            <UploadCloud className="w-6 h-6 text-primary" />
+            <UploadCloud className="w-5 h-5 text-primary" />
           )}
         </div>
         <span className="text-sm font-medium">Upload Invoice</span>

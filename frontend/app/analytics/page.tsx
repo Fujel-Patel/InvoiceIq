@@ -1,23 +1,9 @@
 "use client";
 
-import { useQuery, QueryClient, QueryClientProvider, useIsFetching } from "@tanstack/react-query";
+import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  BarChart3,
-  RefreshCw,
-  AlertCircle,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  Receipt,
-  Landmark,
-  Percent,
-  Store,
-  Scale,
-  Inbox,
-} from "lucide-react";
+import { RefreshCw, AlertCircle, Wallet, TrendingUp, TrendingDown, Receipt, Landmark, Percent, Store, Scale, Inbox, Building2 } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -29,11 +15,13 @@ import {
 } from "recharts";
 import { getAnalytics, AnalyticsPeriod, AnalyticsVendor, AnalyticsBill } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Header } from "@/components/Header";
 
 const queryClient = new QueryClient();
 
@@ -45,14 +33,14 @@ function compactCurrency(value: number, currency: string): string {
   return `${symbol}${abs.toFixed(0)}`;
 }
 
-function PaymentBadge({ status }: { status: string }) {
+function PaymentBadge({ status, className }: { status: string; className?: string }) {
   if (status === "paid") {
-    return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300">Paid</Badge>;
+    return <Badge variant="default" className={cn("bg-green-500 text-white dark:bg-green-600", className)}>Paid</Badge>;
   }
   if (status === "partial") {
-    return <Badge variant="secondary">Partial</Badge>;
+    return <Badge variant="secondary" className={className}>Partial</Badge>;
   }
-  return <Badge variant="outline">Unpaid</Badge>;
+  return <Badge variant="outline" className={className}>Unpaid</Badge>;
 }
 
 function currencySymbol(currency: string): string {
@@ -66,7 +54,7 @@ function currencySymbol(currency: string): string {
   }
 }
 
-function TrendChart({ data, currency, accent }: { data: AnalyticsPeriod[]; currency: string; accent: string }) {
+function TrendChart({ data, currency }: { data: AnalyticsPeriod[]; currency: string }) {
   if (data.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">No data available yet.</p>;
   }
@@ -74,33 +62,34 @@ function TrendChart({ data, currency, accent }: { data: AnalyticsPeriod[]; curre
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
           <XAxis
             dataKey="period"
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
             interval="preserveStartEnd"
           />
           <YAxis
             tickLine={false}
             axisLine={false}
             width={46}
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
             tickFormatter={(v: number) => compactCurrency(v, currency)}
           />
           <Tooltip
-            cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+            cursor={{ fill: "hsl(var(--muted))", opacity: 0.6 }}
             contentStyle={{
               borderRadius: 12,
               border: "1px solid hsl(var(--border))",
               background: "hsl(var(--card))",
+              color: "hsl(var(--foreground))",
               fontSize: 13,
             }}
             formatter={(value: unknown) => [formatCurrency(Number(value), currency), "Total"]}
             labelFormatter={(label: unknown) => `${String(label)} · ${data.find((d) => d.period === label)?.count ?? 0} bill(s)`}
           />
-          <Bar dataKey="total" fill={accent} radius={[6, 6, 0, 0]} maxBarSize={48} />
+          <Bar dataKey="total" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} maxBarSize={48} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -115,12 +104,12 @@ function VendorChart({ vendors, currency }: { vendors: AnalyticsVendor[]; curren
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={vendors} layout="vertical" margin={{ top: 4, right: 8, left: 8, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border) / 0.5)" />
           <XAxis
             type="number"
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
             tickFormatter={(v: number) => compactCurrency(v, currency)}
           />
           <YAxis
@@ -129,14 +118,15 @@ function VendorChart({ vendors, currency }: { vendors: AnalyticsVendor[]; curren
             width={110}
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+            tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
           />
           <Tooltip
-            cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+            cursor={{ fill: "hsl(var(--muted))", opacity: 0.6 }}
             contentStyle={{
               borderRadius: 12,
               border: "1px solid hsl(var(--border))",
               background: "hsl(var(--card))",
+              color: "hsl(var(--foreground))",
               fontSize: 13,
             }}
             formatter={(value: unknown) => [formatCurrency(Number(value), currency), "Total"]}
@@ -148,71 +138,170 @@ function VendorChart({ vendors, currency }: { vendors: AnalyticsVendor[]; curren
   );
 }
 
+function BillCard({ bill, currency }: { bill: AnalyticsBill; currency: string }) {
+  return (
+    <Card key={bill.extraction_id} className="p-4 space-y-3 border-border/60 bg-card/90">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate font-medium text-sm" title={bill.filename}>
+            {bill.filename.length > 30 ? `${bill.filename.substring(0, 30)}...` : bill.filename}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+            <span className="inline-flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              {bill.vendor_name || "Unknown"}
+            </span>
+            {bill.invoice_number && bill.invoice_number !== "N/A" && (
+              <span className="inline-flex items-center gap-1">
+                <Receipt className="h-3 w-3" />
+                {bill.invoice_number}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          {bill.payment_status === "paid" ? (
+            <Badge variant="default" className="bg-green-500 text-white dark:bg-green-600 ml-2">Paid</Badge>
+          ) : bill.payment_status === "partial" ? (
+            <Badge variant="secondary" className="ml-2">Partial</Badge>
+          ) : (
+            <Badge variant="outline" className="ml-2">Unpaid</Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Invoice Date</p>
+          <p>{formatDate(bill.invoice_date)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Due Date</p>
+          <p>{formatDate(bill.due_date)}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Subtotal</p>
+          <p>{formatCurrency(bill.subtotal, bill.currency || currency)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Tax</p>
+          <p>{formatCurrency(bill.tax, bill.currency || currency)}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm border-t pt-2">
+        <div>
+          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="font-semibold">{formatCurrency(bill.total_amount, bill.currency || currency)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Paid</p>
+          <p className="text-green-600 dark:text-green-400 font-semibold">{formatCurrency(bill.amount_paid ?? 0, bill.currency || currency)}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <p className="text-xs text-muted-foreground">Balance</p>
+          <p className={bill.balance_due > 0 ? "font-bold text-amber-600 dark:text-amber-400" : "text-muted-foreground"}>
+            {bill.balance_due > 0 ? formatCurrency(bill.balance_due, bill.currency || currency) : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Type</p>
+          <Badge
+            variant={bill.entry_type === "credit" ? "secondary" : "default"}
+            className={
+              bill.entry_type === "credit"
+                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 w-full"
+                : "w-full"
+            }
+          >
+            {bill.entry_type === "credit" ? "Credit" : "Debit"}
+          </Badge>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function BillsTable({ bills, currency }: { bills: AnalyticsBill[]; currency: string }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0 pb-3">
         <CardTitle>All Bills</CardTitle>
         <Badge variant="secondary" className="w-fit">{bills.length}</Badge>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Bill</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead>Invoice #</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Subtotal</TableHead>
-              <TableHead>Tax</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead>Paid</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bills.map((bill) => (
-              <TableRow key={bill.extraction_id}>
-                <TableCell className="max-w-[180px] truncate font-medium" title={bill.filename}>
-                  {bill.filename}
-                </TableCell>
-                <TableCell>{bill.vendor_name || "Unknown"}</TableCell>
-                <TableCell>{bill.invoice_number || "N/A"}</TableCell>
-                <TableCell>{formatDate(bill.invoice_date)}</TableCell>
-                <TableCell>{formatDate(bill.due_date)}</TableCell>
-                <TableCell>{formatCurrency(bill.subtotal, bill.currency || currency)}</TableCell>
-                <TableCell>{formatCurrency(bill.tax, bill.currency || currency)}</TableCell>
-                <TableCell className="text-right font-semibold">
-                  {formatCurrency(bill.total_amount, bill.currency || currency)}
-                </TableCell>
-                <TableCell className="text-green-600 dark:text-green-400">
-                  {formatCurrency(bill.amount_paid ?? 0, bill.currency || currency)}
-                </TableCell>
-                <TableCell className={`text-right font-medium ${bill.balance_due > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
-                  {bill.balance_due > 0 ? formatCurrency(bill.balance_due, bill.currency || currency) : "—"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={bill.entry_type === "credit" ? "secondary" : "default"}
-                    className={
-                      bill.entry_type === "credit"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                        : ""
-                    }
-                  >
-                    {bill.entry_type === "credit" ? "Credit" : "Debit"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <PaymentBadge status={bill.payment_status} />
-                </TableCell>
+        {/* Desktop Table */}
+        <div className="hidden lg:block overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bill</TableHead>
+                <TableHead>Vendor</TableHead>
+                <TableHead>Invoice #</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Subtotal</TableHead>
+                <TableHead>Tax</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Paid</TableHead>
+                <TableHead className="text-right">Balance</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {bills.map((bill) => (
+                <TableRow key={bill.extraction_id}>
+                  <TableCell className="max-w-[180px] truncate font-medium" title={bill.filename}>
+                    {bill.filename}
+                  </TableCell>
+                  <TableCell>{bill.vendor_name || "Unknown"}</TableCell>
+                  <TableCell>{bill.invoice_number || "N/A"}</TableCell>
+                  <TableCell>{formatDate(bill.invoice_date)}</TableCell>
+                  <TableCell>{formatDate(bill.due_date)}</TableCell>
+                  <TableCell>{formatCurrency(bill.subtotal, bill.currency || currency)}</TableCell>
+                  <TableCell>{formatCurrency(bill.tax, bill.currency || currency)}</TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {formatCurrency(bill.total_amount, bill.currency || currency)}
+                  </TableCell>
+                  <TableCell className="text-green-600 dark:text-green-400">
+                    {formatCurrency(bill.amount_paid ?? 0, bill.currency || currency)}
+                  </TableCell>
+                  <TableCell className={`text-right font-medium ${bill.balance_due > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+                    {bill.balance_due > 0 ? formatCurrency(bill.balance_due, bill.currency || currency) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={bill.entry_type === "credit" ? "secondary" : "default"}
+                      className={
+                        bill.entry_type === "credit"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : ""
+                      }
+                    >
+                      {bill.entry_type === "credit" ? "Credit" : "Debit"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <PaymentBadge status={bill.payment_status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+              </Table>
+        </div>
+        {/* Mobile Card Layout */}
+        <div className="lg:hidden p-4 space-y-3">
+          {bills.map((bill) => (
+            <BillCard key={bill.extraction_id} bill={bill} currency={currency} />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
@@ -226,7 +315,6 @@ function AnalyticsContent() {
     staleTime: 10000,
     refetchOnWindowFocus: true,
   });
-  const isFetching = useIsFetching({ queryKey: ["analytics"] });
 
   if (isLoading) {
     return (
@@ -271,26 +359,7 @@ function AnalyticsContent() {
 
   return (
     <>
-      <nav className="sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <Button variant="ghost" size="sm" className="w-fit px-2 sm:px-3" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          <div className="flex items-center gap-3 sm:gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            <div>
-              <h1 className="text-lg font-semibold leading-tight sm:text-xl">Bill Analytics</h1>
-              <p className="text-sm text-muted-foreground">Debit, credit, and monthly trends across all bills.</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["analytics"] })} disabled={isFetching > 0}>
-            <motion.div whileTap={{ scale: 0.9 }}>
-              <RefreshCw className={'h-4 w-4 ' + (isFetching ? 'animate-spin' : '')} />
-            </motion.div>
-          </Button>
-        </div>
-      </nav>
+      <Header />
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -312,7 +381,7 @@ function AnalyticsContent() {
             <motion.section
               initial={{ opacity: 0, y: -16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
             >
               <StatCard icon={<Receipt className="h-5 w-5 text-primary" />} label="Total Bills" value={String(s.total_invoices)} sub={`${s.unique_vendors} unique vendor(s)`} accent />
               <StatCard
@@ -351,8 +420,8 @@ function AnalyticsContent() {
                   <CardTitle>Monthly Breakdown</CardTitle>
                   <p className="text-sm text-muted-foreground">Total per month</p>
                 </CardHeader>
-                <CardContent>
-                  <TrendChart data={analytics.monthly} currency={currency} accent="hsl(var(--primary))" />
+                <CardContent className="py-2">
+                  <TrendChart data={analytics.monthly} currency={currency} />
                 </CardContent>
               </Card>
               <Card className="border-border/60 bg-card/90 shadow-sm">
@@ -360,8 +429,8 @@ function AnalyticsContent() {
                   <CardTitle>Weekly Breakdown</CardTitle>
                   <p className="text-sm text-muted-foreground">Total per week (ISO week)</p>
                 </CardHeader>
-                <CardContent>
-                  <TrendChart data={analytics.weekly} currency={currency} accent="hsl(217 91% 60%)" />
+                <CardContent className="py-2">
+                  <TrendChart data={analytics.weekly} currency={currency} />
                 </CardContent>
               </Card>
             </div>
@@ -403,7 +472,7 @@ function StatCard({
         <CardContent className="flex h-full flex-col justify-between p-6">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-muted-foreground">{label}</p>
-            <div className={accent ? "rounded-xl bg-primary/10 p-2 text-primary" : ""}>{icon}</div>
+            <div className={accent ? "rounded-xl bg-primary/10 dark:bg-primary/20 p-2 text-primary dark:text-primary-foreground" : ""}>{icon}</div>
           </div>
           <p className={accent ? "mt-3 text-2xl font-semibold tracking-tight text-primary" : "mt-3 text-2xl font-semibold tracking-tight"}>
             {value}

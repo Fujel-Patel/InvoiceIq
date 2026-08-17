@@ -32,12 +32,53 @@ function PaymentStatusBadge({ amountPaid, total }: { amountPaid: number | null; 
   if (total == null) return null;
   const paid = amountPaid ?? 0;
   if (paid >= total) {
-    return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-300">Paid</Badge>;
+    return <Badge variant="default" className="bg-green-500 text-white dark:bg-green-600">Paid</Badge>;
   }
   if (paid > 0) {
     return <Badge variant="secondary">Partial</Badge>;
   }
   return <Badge variant="outline">Unpaid</Badge>;
+}
+
+function LineItemCard({ item, index, currency, isEditing, handleLineItemChange }: { item: ExtractedInvoice["line_items"][number]; index: number; currency: string; isEditing: boolean; handleLineItemChange: (index: number, field: keyof ExtractedInvoice["line_items"][number], value: string) => void }) {
+  return (
+    <Card key={index} className="p-4 space-y-3 border-border/60 bg-card/90">
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Description</Label>
+        {isEditing ? (
+          <Input value={item.description} onChange={(e) => handleLineItemChange(index, "description", e.target.value)} />
+        ) : (
+          <p className="font-medium">{item.description}</p>
+        )}
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Quantity</Label>
+          {isEditing ? (
+            <Input type="number" value={item.quantity ?? ""} onChange={(e) => handleLineItemChange(index, "quantity", e.target.value)} />
+          ) : (
+            <p>{item.quantity ?? "N/A"}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Unit Price</Label>
+          {isEditing ? (
+            <Input type="number" value={item.unit_price ?? ""} onChange={(e) => handleLineItemChange(index, "unit_price", e.target.value)} />
+          ) : (
+            <p>{formatCurrency(item.unit_price, currency)}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Total</Label>
+          {isEditing ? (
+            <Input type="number" value={item.total ?? ""} onChange={(e) => handleLineItemChange(index, "total", e.target.value)} />
+          ) : (
+            <p className="font-semibold">{formatCurrency(item.total, currency)}</p>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
 }
 
 export default function DataTable({ extractionId, data, status, filename }: DataTableProps) {
@@ -109,24 +150,24 @@ export default function DataTable({ extractionId, data, status, filename }: Data
       className="space-y-6"
     >
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
           <div>
             <h2 className="text-xl font-bold">{filename}</h2>
             <Badge className={cn("mt-2", statusColors[statusInfo.color] || statusColors.gray)}>
               {statusInfo.label}
             </Badge>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             {!isEditing ? (
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
+              <Button variant="outline" onClick={() => setIsEditing(true)} className="flex-1 sm:flex-none">
                 <Edit2 className="w-4 h-4 mr-2" /> Edit
               </Button>
             ) : (
               <>
-                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving} className="flex-1 sm:flex-none">
                   <X className="w-4 h-4 mr-2" /> Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
+                <Button onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
                   {isSaving ? "Saving..." : <><Check className="w-4 h-4 mr-2" /> Save</>}
                 </Button>
               </>
@@ -134,17 +175,18 @@ export default function DataTable({ extractionId, data, status, filename }: Data
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Fields grid - responsive: 1 col on mobile, 2 on sm, 4 on lg */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {(["vendor_name", "invoice_number", "invoice_date", "due_date", "currency", "subtotal", "tax", "total_amount"] as const).map((field) => (
               <div key={field} className="space-y-2">
-                <Label className="capitalize">{field.replace("_", " ")}</Label>
+                <Label className="capitalize text-sm">{field.replace("_", " ")}</Label>
                 {isEditing ? (
                   <Input
                     value={formData[field] ?? ""}
                     onChange={(e) => handleFieldChange(field, e.target.value)}
                   />
                 ) : (
-                  <div className={cn("text-sm", field.includes("amount") && "text-2xl font-bold")}>
+                  <div className={cn("text-sm", field.includes("amount") && "text-xl font-bold")}>
                     {field.includes("date")
                       ? formatDate(formData[field] as string)
                       : field.includes("amount") || field.includes("subtotal") || field.includes("tax")
@@ -155,7 +197,7 @@ export default function DataTable({ extractionId, data, status, filename }: Data
               </div>
             ))}
             <div className="space-y-2">
-              <Label>Entry Type</Label>
+              <Label className="text-sm">Entry Type</Label>
               {isEditing ? (
                 <div className="flex gap-2">
                   {(["debit", "credit"] as const).map((type) => (
@@ -167,7 +209,7 @@ export default function DataTable({ extractionId, data, status, filename }: Data
                         "flex-1 rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors",
                         formData.entry_type === type
                           ? type === "credit"
-                            ? "border-green-500 bg-green-500/10 text-green-600 dark:text-green-400"
+                            ? "border-green-500 bg-green-500/10 text-green-700 dark:text-green-300"
                             : "border-primary bg-primary/10 text-primary"
                           : "text-muted-foreground hover:bg-muted"
                       )}
@@ -190,19 +232,20 @@ export default function DataTable({ extractionId, data, status, filename }: Data
             </div>
           </div>
 
+          {/* Payment section */}
           <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">Payment</h3>
                 <PaymentStatusBadge amountPaid={formData.amount_paid} total={formData.total_amount} />
               </div>
               {!isEditing && formData.total_amount != null && (formData.amount_paid ?? 0) < formData.total_amount && (
-                <Button variant="outline" size="sm" onClick={handleMarkPaid} disabled={isSaving}>
+                <Button variant="outline" size="sm" onClick={handleMarkPaid} disabled={isSaving} className="w-full sm:w-auto">
                   {isSaving ? "Saving..." : <><Check className="w-4 h-4 mr-2" /> Mark as Paid</>}
                 </Button>
               )}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Total Amount</Label>
                 <p className="text-lg font-semibold">{formatCurrency(formData.total_amount, formData.currency || "INR")}</p>
@@ -237,42 +280,65 @@ export default function DataTable({ extractionId, data, status, filename }: Data
 
           <Separator />
 
+          {/* Line Items - responsive: table on desktop, cards on mobile */}
           <div className="space-y-2">
             <h3 className="font-semibold">Line Items</h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Unit Price</TableHead>
-                  <TableHead>Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {formData.line_items.length > 0 ? (
-                  formData.line_items.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        {isEditing ? <Input value={item.description} onChange={(e) => handleLineItemChange(index, "description", e.target.value)} /> : item.description}
-                      </TableCell>
-                      <TableCell>
-                        {isEditing ? <Input type="number" value={item.quantity ?? ""} onChange={(e) => handleLineItemChange(index, "quantity", e.target.value)} /> : item.quantity ?? "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {isEditing ? <Input type="number" value={item.unit_price ?? ""} onChange={(e) => handleLineItemChange(index, "unit_price", e.target.value)} /> : formatCurrency(item.unit_price, formData.currency || "USD")}
-                      </TableCell>
-                      <TableCell>
-                        {isEditing ? <Input type="number" value={item.total ?? ""} onChange={(e) => handleLineItemChange(index, "total", e.target.value)} /> : formatCurrency(item.total, formData.currency || "USD")}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">No line items found</TableCell>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Unit Price</TableHead>
+                    <TableHead>Total</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {formData.line_items.length > 0 ? (
+                    formData.line_items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          {isEditing ? <Input value={item.description} onChange={(e) => handleLineItemChange(index, "description", e.target.value)} /> : item.description}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? <Input type="number" value={item.quantity ?? ""} onChange={(e) => handleLineItemChange(index, "quantity", e.target.value)} /> : item.quantity ?? "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? <Input type="number" value={item.unit_price ?? ""} onChange={(e) => handleLineItemChange(index, "unit_price", e.target.value)} /> : formatCurrency(item.unit_price, formData.currency || "USD")}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? <Input type="number" value={item.total ?? ""} onChange={(e) => handleLineItemChange(index, "total", e.target.value)} /> : formatCurrency(item.total, formData.currency || "USD")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">No line items found</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {/* Mobile Card Layout */}
+            <div className="lg:hidden space-y-3">
+              {formData.line_items.length > 0 ? (
+                formData.line_items.map((item, index) => (
+                  <LineItemCard
+                    key={`line-item-${index}`}
+                    item={item}
+                    index={index}
+                    currency={formData.currency || "USD"}
+                    isEditing={isEditing}
+                    handleLineItemChange={handleLineItemChange}
+                  />
+                ))
+              ) : (
+                <Card className="p-6 text-center border-dashed border-border/60">
+                  <p className="text-muted-foreground">No line items found</p>
+                </Card>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

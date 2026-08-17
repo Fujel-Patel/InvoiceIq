@@ -37,15 +37,15 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="grid min-h-screen lg:grid-cols-2">
-        {/* Brand panel */}
-        <div className="hidden flex-col justify-between border-r border-border/60 bg-card/40 p-12 lg:flex">
+        {/* Brand panel - hidden on mobile, shown on lg+ */}
+        <div className="hidden flex-col justify-between border-r border-border/60 bg-card/40 p-8 lg:p-12 lg:flex">
           <Link href="/" className="inline-flex items-center gap-2 text-xl font-bold">
             <BrandMark />
             InvoiceIQ
           </Link>
 
           <div className="space-y-6">
-            <h2 className="text-3xl font-extrabold tracking-tight">
+            <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight">
               Invoices, decoded by AI.
             </h2>
             <p className="text-muted-foreground">
@@ -67,8 +67,8 @@ export default function AuthLayout({
           <p className="text-xs text-muted-foreground">InvoiceIQ © 2026</p>
         </div>
 
-        {/* Form panel */}
-        <div className="flex flex-col items-center justify-center px-6 py-12">
+        {/* Form panel - full width on mobile, half on lg+ */}
+        <div className="flex flex-col items-center justify-center px-4 sm:px-6 py-8 lg:py-12">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -92,10 +92,10 @@ export default function AuthLayout({
               </div>
             )}
 
-            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+            <h1 className="text-xl lg:text-2xl font-bold tracking-tight">{title}</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
 
-            <div className="mt-8">{children}</div>
+            <div className="mt-6 lg:mt-8">{children}</div>
           </motion.div>
         </div>
       </div>

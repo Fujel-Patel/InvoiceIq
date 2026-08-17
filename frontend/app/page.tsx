@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, FileSearch, Zap, Shield, History, AlertTriangle, FilePlus2, CheckCircle2, BarChart3 } from "lucide-react";
+import { Sparkles, FileSearch, Zap, Shield, AlertTriangle, FilePlus2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2 } from "lucide-react";
@@ -11,10 +11,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "sonner";
 import UploadActions from "@/components/UploadActions";
-import ThemeToggle from "@/components/ThemeToggle";
+import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { getLLMConfig, logout } from "@/lib/api";
+import { getLLMConfig } from "@/lib/api";
 
 interface LLMConfigState {
   provider: string;
@@ -72,12 +72,6 @@ export default function Home() {
 
   const hasLLMConfig = config !== null;
 
-  const pathname = usePathname();
-  const navLinkClass = (href: string) =>
-    `text-sm font-medium flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-      pathname === href ? "text-primary" : "text-muted-foreground hover:text-primary"
-    }`;
-
   if (checking) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -91,50 +85,10 @@ export default function Home() {
       <Toaster position="top-right" richColors />
 
       {/* Navbar */}
-      <nav className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl">
-            <Sparkles className="w-6 h-6 text-primary" />
-            InvoiceIQ
-          </div>
-            <Link
-              href="/history"
-              aria-label="View extraction history"
-              className={navLinkClass("/history")}
-            >
-              <History className="w-4 h-4" />
-              History
-            </Link>
-            <Link
-              href="/analytics"
-              aria-label="View bill analytics"
-              className={navLinkClass("/analytics")}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </Link>
-            <Link
-              href="/settings"
-              aria-label="LLM configuration settings"
-              className={navLinkClass("/settings")}
-            >
-              <Zap className="w-4 h-4" />
-              Settings
-            </Link>
-            <ThemeToggle />
-            <Button variant="ghost" size="sm" aria-label="Sign out" onClick={() => {
-              abortControllerRef.current?.abort();
-              logout().catch(() => {});
-              Promise.resolve(supabase.auth.signOut()).catch(() => {});
-              router.replace('/login');
-            }}>
-              Sign Out
-            </Button>
-        </div>
-      </nav>
+      <Header />
 
       {/* Hero Section */}
-      <main className="max-w-4xl mx-auto px-6 py-12 sm:py-16 flex flex-col items-center text-center">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -145,10 +99,10 @@ export default function Home() {
             <Sparkles className="w-3.5 h-3.5" />
             AI Powered
           </Badge>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
             Extract Invoice Data Instantly
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl">
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl">
             Upload any invoice or receipt and let AI extract vendor, amounts,
             line items, and more in seconds.
           </p>
@@ -193,17 +147,17 @@ export default function Home() {
         >
           <div className="p-1 rounded-2xl bg-gradient-to-b from-primary/20 to-primary/5 shadow-2xl">
             <div className="bg-background rounded-xl p-5 flex flex-col gap-4">
-              {/* Create Direct Bill — full width, half the height of the buttons below */}
+              {/* Create Direct Bill — full width */}
               <Button
                 size="lg"
-                className="w-full h-16 text-base gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+                className="w-full sm:h-16 text-base gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
                 onClick={() => router.push("/direct-bill")}
               >
                 <FilePlus2 className="w-5 h-5" />
                 Create Direct Bill
               </Button>
 
-              {/* Camera + Upload side-by-side */}
+              {/* Camera + Upload side-by-side on desktop, stacked on mobile */}
               <UploadActions hasLLMConfig={hasLLMConfig} />
             </div>
           </div>
@@ -239,7 +193,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="mt-14 flex flex-wrap justify-center gap-4"
+          className="mt-14 flex flex-wrap justify-center gap-3"
         >
           {[
             { icon: Zap, label: "Instant Extraction" },
@@ -248,10 +202,10 @@ export default function Home() {
           ].map((feature, i) => (
             <Card
               key={i}
-              className="flex items-center gap-2 px-4 py-2 bg-background border shadow-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-background border shadow-sm min-w-[160px] max-w-xs"
             >
-              <feature.icon className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">{feature.label}</span>
+              <feature.icon className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm font-medium truncate">{feature.label}</span>
             </Card>
           ))}
         </motion.div>

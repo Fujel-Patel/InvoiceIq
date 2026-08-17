@@ -3,12 +3,13 @@
 import { useQuery, QueryClient, QueryClientProvider, useIsFetching } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, History, RefreshCw, AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { getHistory } from "@/lib/api";
 import HistoryList from "@/components/HistoryList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Header } from "@/components/Header";
 
 const queryClient = new QueryClient();
 
@@ -67,26 +68,8 @@ function HistoryContent() {
 
   return (
     <>
-      <nav className="sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <Button variant="ghost" size="sm" className="w-fit px-2 sm:px-3" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          <div className="flex items-center gap-3 sm:gap-2">
-            <History className="w-5 h-5 text-primary" />
-            <div>
-              <h1 className="text-lg font-semibold leading-tight sm:text-xl">Extraction History</h1>
-              <p className="text-sm text-muted-foreground">Review every invoice extraction in one place.</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["history"] })} disabled={isFetching > 0}>
-            <motion.div whileTap={{ scale: 0.9 }}>
-              <RefreshCw className={'h-4 w-4 ' + (isFetching ? 'animate-spin' : '')} />
-            </motion.div>
-          </Button>
-        </div>
-      </nav>
+      <Header />
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -95,12 +78,12 @@ function HistoryContent() {
         <motion.section
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           {[
             { label: "Total Extractions", value: stats.total, valueClassName: "text-foreground" },
-            { label: "Successful", value: stats.successful, valueClassName: "text-green-600" },
-            { label: "Failed", value: stats.failed, valueClassName: "text-red-600" },
+            { label: "Successful", value: stats.successful, valueClassName: "text-green-600 dark:text-green-400" },
+            { label: "Failed", value: stats.failed, valueClassName: "text-red-600 dark:text-red-400" },
           ].map((stat) => (
             <motion.div
               key={stat.label}
@@ -108,9 +91,9 @@ function HistoryContent() {
               className={isFetching ? "opacity-80" : ""}
             >
               <Card className="h-full overflow-hidden border-border/60 bg-card/90 shadow-sm transition-shadow hover:shadow-md">
-                <CardContent className="flex h-full flex-col justify-between p-6">
+                <CardContent className="flex h-full flex-col justify-between p-4 sm:p-6">
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className={`mt-2 text-3xl font-semibold tracking-tight ${stat.valueClassName}`}>
+                  <p className={`mt-2 text-2xl sm:text-3xl font-semibold tracking-tight ${stat.valueClassName}`}>
                     {stat.value}
                   </p>
                 </CardContent>

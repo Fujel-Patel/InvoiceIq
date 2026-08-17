@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Plus, Trash2, Save, Loader2, FilePlus2 } from "lucide-react";
+import { Plus, Trash2, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createDirectBill, getApiErrorMessage, type ExtractedInvoice, type LineItem } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Header } from "@/components/Header";
 
 interface EditableLineItem {
   description: string;
@@ -104,19 +105,9 @@ export default function DirectBillPage() {
 
   return (
     <div className="min-h-screen bg-muted/20">
-      <nav className="border-b bg-background sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-          </Button>
-          <h1 className="font-bold text-lg flex items-center gap-2">
-            <FilePlus2 className="w-5 h-5 text-primary" /> Create Direct Bill
-          </h1>
-          <div className="w-20" />
-        </div>
-      </nav>
+      <Header />
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -211,41 +202,79 @@ export default function DirectBillPage() {
               {lineItems.map((item, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-[1fr_80px_100px_40px] gap-3 items-center"
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_80px_100px_40px] gap-3 items-center"
                 >
-                  <Input
-                    value={item.description}
-                    onChange={(e) => updateLine(index, "description", e.target.value)}
-                    placeholder="Item description"
-                    aria-label={`Item ${index + 1} description`}
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={item.quantity}
-                    onChange={(e) => updateLine(index, "quantity", e.target.value)}
-                    placeholder="Qty"
-                    aria-label={`Item ${index + 1} quantity`}
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={item.unit_price}
-                    onChange={(e) => updateLine(index, "unit_price", e.target.value)}
-                    placeholder="Price"
-                    aria-label={`Item ${index + 1} unit price`}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive"
-                    onClick={() => removeLine(index)}
-                    aria-label={`Remove item ${index + 1}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="sm:col-span-1">
+                    <Input
+                      value={item.description}
+                      onChange={(e) => updateLine(index, "description", e.target.value)}
+                      placeholder="Item description"
+                      aria-label={`Item ${index + 1} description`}
+                    />
+                  </div>
+                  <div className="hidden sm:block">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.quantity}
+                      onChange={(e) => updateLine(index, "quantity", e.target.value)}
+                      placeholder="Qty"
+                      aria-label={`Item ${index + 1} quantity`}
+                    />
+                  </div>
+                  <div className="hidden sm:block">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.unit_price}
+                      onChange={(e) => updateLine(index, "unit_price", e.target.value)}
+                      placeholder="Price"
+                      aria-label={`Item ${index + 1} unit price`}
+                    />
+                  </div>
+                  <div className="hidden sm:block">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      onClick={() => removeLine(index)}
+                      aria-label={`Remove item ${index + 1}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {/* Mobile stacked view */}
+                  <div className="sm:hidden grid grid-cols-3 gap-2 w-full">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.quantity}
+                      onChange={(e) => updateLine(index, "quantity", e.target.value)}
+                      placeholder="Qty"
+                      aria-label={`Item ${index + 1} quantity`}
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.unit_price}
+                      onChange={(e) => updateLine(index, "unit_price", e.target.value)}
+                      placeholder="Price"
+                      aria-label={`Item ${index + 1} unit price`}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      onClick={() => removeLine(index)}
+                      aria-label={`Remove item ${index + 1}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
 
