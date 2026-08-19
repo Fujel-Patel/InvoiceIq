@@ -23,9 +23,9 @@ async def verify_llm_config(request: VerifyLLMRequest) -> VerifyLLMResponse:
                 max_tokens=10
             )
         elif request.provider == LLMProvider.GOOGLE:
-            # Using the new google.genai API (async client)
+            # Using google-genai 2.x API (synchronous)
             client = genai.Client(api_key=request.api_key)
-            await client.aio.models.generate_content(
+            client.models.generate_content(
                 model=request.model,
                 contents="Hi"
             )
