@@ -38,20 +38,36 @@ export default function Home() {
 
   React.useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session) {
-          setChecking(false);
-          return;
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (data?.session) {
+            setChecking(false);
+            return;
+          }
+        } catch {
+          // Supabase unreachable — show app anyway
         }
-      } catch {
-        // Supabase unreachable — show app anyway
+        retries--;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
       // No session — redirect to login
       router.replace('/login');
       setChecking(false);
     };
     checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: { access_token: string } | null) => {
+      if (!session) {
+        router.replace('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [router]);
 
   React.useEffect(() => {
