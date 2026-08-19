@@ -12,6 +12,7 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from fastapi import FastAPI, Request  # noqa: E402
+import re
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from loguru import logger  # noqa: E402
 
@@ -57,9 +58,24 @@ async def log_requests(request: Request, call_next):
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Unhandled exception: {exc}")
     from fastapi.responses import JSONResponse
+    # Include CORS headers for error responses
+    origin = request.headers.get("origin", "")
+    cors_headers = {}
+    if origin:
+        cors_origins = settings.CORS_ORIGINS.copy()
+        if settings.FRONTEND_URL and settings.FRONTEND_URL not in cors_origins:
+            cors_origins.append(settings.FRONTEND_URL)
+        if origin in cors_origins or (settings.CORS_ORIGIN_REGEX and re.match(settings.CORS_ORIGIN_REGEX, origin)):
+            cors_headers = {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*",
+            }
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
+        headers=cors_headers,
     )
 
 
