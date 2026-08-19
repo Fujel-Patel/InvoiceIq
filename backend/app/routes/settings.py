@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from backend.app.core.database import get_db_service
 from backend.app.services.db import DatabaseService
 from backend.app.schemas.llm_config import (
     LLMConfigCreate,
@@ -28,7 +29,7 @@ def mask_api_key(api_key: str) -> str:
 @router.post("/llm", response_model=LLMConfigResponse, status_code=status.HTTP_201_CREATED)
 async def save_llm_config(
     config: LLMConfigCreate,
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> LLMConfigResponse:
     """Save LLM configuration for the current user."""
@@ -53,7 +54,7 @@ async def save_llm_config(
 
 @router.get("/llm", response_model=LLMConfigResponse)
 async def get_llm_config(
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> LLMConfigResponse:
     """Get LLM configuration for the current user."""

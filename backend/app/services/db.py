@@ -2,30 +2,19 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from loguru import logger
-from supabase import create_client, Client
-from ..core.config import settings
+from sqlalchemy import select, desc
+from sqlalchemy.ext.asyncio import AsyncSession
 from ..models.invoice import ExtractedInvoice
+from ..models.extraction import Extraction
+from ..models.llm_config import LLMConfig
 from ..schemas.llm_config import LLMConfigCreate
-
-# In-memory fallback store for dev mode when Supabase is unavailable
-_fallback_extractions: Dict[str, Dict[str, Any]] = {}
 
 
 class DatabaseService:
-    """Service for Supabase database operations."""
+    """Service for database operations using SQLAlchemy."""
 
-    def __init__(self):
-        self.supabase: Optional[Client] = None
-        self.table_name = "extractions"
-        self.llm_config_table = "llm_configs"
-        try:
-            self.supabase = create_client(
-                settings.SUPABASE_URL,
-                settings.SUPABASE_SERVICE_ROLE_KEY
-            )
-        except Exception as e:
-            logger.warning(f"Failed to connect to Supabase: {e}")
+    def __init__(self, db: Optional[AsyncSession] = None):
+        self.db = db
 
     def _build_record(
         self,
@@ -62,166 +51,237 @@ class DatabaseService:
         data: ExtractedInvoice,
         status: str
     ) -> Dict[str, Any]:
+        """Save extraction to database."""
+        if not self.db:
+            raise RuntimeError("Database session not provided")
+
         record = self._build_record(extraction_id, filename, user_id, data, status)
-
-        if not self.supabase:
-            logger.warning("Supabase unavailable, storing in-memory")
-            _fallback_extractions[extraction_id] = record
-            return record
-
-        try:
-            result = self.supabase.table(self.table_name).insert(record).execute()
-        except Exception as e:
-            logger.error(f"Supabase insert failed: {e}")
-            _fallback_extractions[extraction_id] = record
-            return record
-
-        if not result.data:
-            _fallback_extractions[extraction_id] = record
-            return record
-
-        return result.data[0]
-
-    async def get_extraction_by_id(self, extraction_id: str) -> Optional[Dict[str, Any]]:
-        if not self.supabase:
-            return _fallback_extractions.get(extraction_id)
-
-        try:
-            result = self.supabase.table(self.table_name).select("*").eq("id", extraction_id).execute()
-        except Exception as e:
-            logger.error(f"Supabase select failed: {e}")
-            return _fallback_extractions.get(extraction_id)
-
-        if not result.data:
-            return _fallback_extractions.get(extraction_id)
-
-        return result.data[0]
-
-    async def update_extraction(self, extraction_id: str, data: ExtractedInvoice) -> Optional[Dict[str, Any]]:
-        updated_fields = {
-            "vendor_name": data.vendor_name,
-            "invoice_number": data.invoice_number,
-            "invoice_date": data.invoice_date,
-            "due_date": data.due_date,
-            "subtotal": data.subtotal,
-            "tax": data.tax,
-            "total_amount": data.total_amount,
-            "currency": data.currency,
-            "entry_type": data.entry_type,
-            "amount_paid": data.amount_paid,
-            "full_data": data.model_dump() if hasattr(data, 'model_dump') else data.dict(),
-            "updated_at": "now()"
+        
+        extraction = Extraction(
+            id=extraction_id,
+            user_id=user_id,
+            filename=filename,
+            status=status,
+            vendor_name=data.vendor_name,
+            invoice_number=data.invoice_number,
+            invoice_date=data.invoice_date,
+            due_date=data.due_date,
+            subtotal=data.subtotal,
+            tax=data.tax,
+            total_amount=data.total_amount,
+            currency=data.currency,
+            entry_type=data.entry_type,
+            amount_paid=data.amount_paid,
+            full_data=data.model_dump() if hasattr(data, 'model_dump') else data.dict(),
+        )
+        
+        self.db.add(extraction)
+        await self.db.commit()
+        await self.db.refresh(extraction)
+        
+        return {
+            "id": str(extraction.id),
+            "filename": extraction.filename,
+            "user_id": str(extraction.user_id),
+            "status": extraction.status,
+            "created_at": extraction.created_at.isoformat() if extraction.created_at else "",
+            "vendor_name": extraction.vendor_name,
+            "invoice_number": extraction.invoice_number,
+            "invoice_date": extraction.invoice_date,
+            "due_date": extraction.due_date,
+            "subtotal": extraction.subtotal,
+            "tax": extraction.tax,
+            "total_amount": extraction.total_amount,
+            "currency": extraction.currency,
+            "entry_type": extraction.entry_type,
+            "amount_paid": extraction.amount_paid,
+            "full_data": extraction.full_data,
         }
 
-        if not self.supabase:
-            existing = _fallback_extractions.get(extraction_id)
-            if existing:
-                existing.update(updated_fields)
-                return existing
+    async def get_extraction_by_id(self, extraction_id: str) -> Optional[Dict[str, Any]]:
+        if not self.db:
+            raise RuntimeError("Database session not provided")
+
+        result = await self.db.execute(
+            select(Extraction).where(Extraction.id == extraction_id)
+        )
+        extraction = result.scalar_one_or_none()
+        
+        if not extraction:
+            return None
+            
+        return {
+            "id": str(extraction.id),
+            "filename": extraction.filename,
+            "user_id": str(extraction.user_id),
+            "status": extraction.status,
+            "created_at": extraction.created_at.isoformat() if extraction.created_at else "",
+            "vendor_name": extraction.vendor_name,
+            "invoice_number": extraction.invoice_number,
+            "invoice_date": extraction.invoice_date,
+            "due_date": extraction.due_date,
+            "subtotal": extraction.subtotal,
+            "tax": extraction.tax,
+            "total_amount": extraction.total_amount,
+            "currency": extraction.currency,
+            "entry_type": extraction.entry_type,
+            "amount_paid": extraction.amount_paid,
+            "full_data": extraction.full_data,
+        }
+
+    async def update_extraction(self, extraction_id: str, data: ExtractedInvoice) -> Optional[Dict[str, Any]]:
+        if not self.db:
+            raise RuntimeError("Database session not provided")
+
+        result = await self.db.execute(
+            select(Extraction).where(Extraction.id == extraction_id)
+        )
+        extraction = result.scalar_one_or_none()
+        
+        if not extraction:
             return None
 
-        try:
-            result = self.supabase.table(self.table_name).update(updated_fields).eq("id", extraction_id).execute()
-        except Exception as e:
-            logger.error(f"Supabase update failed: {e}")
-            existing = _fallback_extractions.get(extraction_id)
-            if existing:
-                existing.update(updated_fields)
-                return existing
-            return None
+        extraction.vendor_name = data.vendor_name
+        extraction.invoice_number = data.invoice_number
+        extraction.invoice_date = data.invoice_date
+        extraction.due_date = data.due_date
+        extraction.subtotal = data.subtotal
+        extraction.tax = data.tax
+        extraction.total_amount = data.total_amount
+        extraction.currency = data.currency
+        extraction.entry_type = data.entry_type
+        extraction.amount_paid = data.amount_paid
+        extraction.full_data = data.model_dump() if hasattr(data, 'model_dump') else data.dict()
+        extraction.updated_at = datetime.now(timezone.utc)
 
-        if not result.data:
-            existing = _fallback_extractions.get(extraction_id)
-            if existing:
-                existing.update(updated_fields)
-                return existing
-            return None
-
-        return result.data[0]
+        await self.db.commit()
+        await self.db.refresh(extraction)
+        
+        return {
+            "id": str(extraction.id),
+            "filename": extraction.filename,
+            "user_id": str(extraction.user_id),
+            "status": extraction.status,
+            "created_at": extraction.created_at.isoformat() if extraction.created_at else "",
+            "vendor_name": extraction.vendor_name,
+            "invoice_number": extraction.invoice_number,
+            "invoice_date": extraction.invoice_date,
+            "due_date": extraction.due_date,
+            "subtotal": extraction.subtotal,
+            "tax": extraction.tax,
+            "total_amount": extraction.total_amount,
+            "currency": extraction.currency,
+            "entry_type": extraction.entry_type,
+            "amount_paid": extraction.amount_paid,
+            "full_data": extraction.full_data,
+        }
 
     async def get_user_history(self, user_id: str) -> List[Dict[str, Any]]:
-        if not self.supabase:
-            return sorted(
-                [r for r in _fallback_extractions.values() if r.get("user_id") == user_id],
-                key=lambda r: r.get("created_at", ""),
-                reverse=True,
-            )
+        if not self.db:
+            raise RuntimeError("Database session not provided")
 
-        try:
-            result = self.supabase.table(self.table_name).select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
-        except Exception as e:
-            logger.error(f"Supabase history query failed: {e}")
-            return sorted(
-                [r for r in _fallback_extractions.values() if r.get("user_id") == user_id],
-                key=lambda r: r.get("created_at", ""),
-                reverse=True,
-            )
-
-        return result.data if result.data else []
+        result = await self.db.execute(
+            select(Extraction)
+            .where(Extraction.user_id == user_id)
+            .order_by(desc(Extraction.created_at))
+        )
+        extractions = result.scalars().all()
+        
+        return [
+            {
+                "id": str(e.id),
+                "filename": e.filename,
+                "user_id": str(e.user_id),
+                "status": e.status,
+                "created_at": e.created_at.isoformat() if e.created_at else "",
+                "vendor_name": e.vendor_name,
+                "invoice_number": e.invoice_number,
+                "invoice_date": e.invoice_date,
+                "due_date": e.due_date,
+                "subtotal": e.subtotal,
+                "tax": e.tax,
+                "total_amount": e.total_amount,
+                "currency": e.currency,
+                "entry_type": e.entry_type,
+                "amount_paid": e.amount_paid,
+                "full_data": e.full_data,
+            }
+            for e in extractions
+        ]
 
     async def save_llm_config(
         self,
         user_id: str,
         config: LLMConfigCreate
     ) -> Dict[str, Any]:
-        existing = await self.get_llm_config(user_id)
-        if existing:
-            if not self.supabase:
-                return existing
+        if not self.db:
+            raise RuntimeError("Database session not provided")
 
-            try:
-                result = self.supabase.table(self.llm_config_table).update({
-                    "provider": config.provider,
-                    "api_key": config.api_key,
-                    "model": config.model,
-                    "updated_at": "now()"
-                }).eq("user_id", user_id).execute()
-            except Exception as e:
-                logger.error(f"Supabase LLM config update failed: {e}")
-                return existing
+        result = await self.db.execute(
+            select(LLMConfig).where(LLMConfig.user_id == user_id)
+        )
+        existing = result.scalar_one_or_none()
 
-            if not result.data:
-                return existing
-
-            return result.data[0]
+        if existing is not None:
+            existing.provider = config.provider
+            existing.api_key = config.api_key
+            existing.model = config.model
+            existing.updated_at = datetime.now(timezone.utc)
+            await self.db.commit()
+            await self.db.refresh(existing)
+            
+            return {
+                "id": str(existing.id),
+                "user_id": str(existing.user_id),
+                "provider": existing.provider,
+                "api_key": existing.api_key,
+                "model": existing.model,
+                "created_at": existing.created_at.isoformat() if existing.created_at is not None else "",
+                "updated_at": existing.updated_at.isoformat() if existing.updated_at is not None else "",
+            }
         else:
             import uuid
-            record = {
-                "id": str(uuid.uuid4()),
-                "user_id": user_id,
-                "provider": config.provider,
-                "api_key": config.api_key,
-                "model": config.model,
-                "created_at": "now()",
-                "updated_at": "now()"
+            llm_config = LLMConfig(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                provider=config.provider,
+                api_key=config.api_key,
+                model=config.model,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            self.db.add(llm_config)
+            await self.db.commit()
+            await self.db.refresh(llm_config)
+            
+            return {
+                "id": str(llm_config.id),
+                "user_id": str(llm_config.user_id),
+                "provider": llm_config.provider,
+                "api_key": llm_config.api_key,
+                "model": llm_config.model,
+                "created_at": llm_config.created_at.isoformat() if llm_config.created_at is not None else "",
+                "updated_at": llm_config.updated_at.isoformat() if llm_config.updated_at is not None else "",
             }
 
-            if not self.supabase:
-                logger.warning("Supabase unavailable, returning in-memory LLM config record")
-                return record
-
-            try:
-                result = self.supabase.table(self.llm_config_table).insert(record).execute()
-            except Exception as e:
-                logger.error(f"Supabase LLM config insert failed: {e}")
-                return record
-
-            if not result.data:
-                return record
-
-            return result.data[0]
-
     async def get_llm_config(self, user_id: str) -> Optional[Dict[str, Any]]:
-        if not self.supabase:
-            return None
+        if not self.db:
+            raise RuntimeError("Database session not provided")
 
-        try:
-            result = self.supabase.table(self.llm_config_table).select("*").eq("user_id", user_id).execute()
-        except Exception as e:
-            logger.error(f"Supabase LLM config query failed: {e}")
+        result = await self.db.execute(
+            select(LLMConfig).where(LLMConfig.user_id == user_id)
+        )
+        config = result.scalar_one_or_none()
+        
+        if not config:
             return None
-
-        if not result.data:
-            return None
-
-        return result.data[0]
+            
+        return {
+            "id": str(config.id),
+            "user_id": str(config.user_id),
+            "provider": config.provider,
+            "api_key": config.api_key,
+            "model": config.model,
+            "created_at": config.created_at.isoformat() if config.created_at else "",
+            "updated_at": config.updated_at.isoformat() if config.updated_at else "",
+        }

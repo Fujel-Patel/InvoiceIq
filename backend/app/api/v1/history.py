@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from typing import List, Optional
 
+from backend.app.core.database import get_db_service
 from backend.app.models.invoice import HistoryItem
 from backend.app.services.db import DatabaseService
 from backend.app.utils.auth import get_current_user
@@ -18,7 +19,7 @@ def get_user_id(current_user: dict) -> str:
 @router.get("/history", response_model=List[HistoryItem])
 async def get_user_history(
     user_id: Optional[str] = Query(None, description="User ID to fetch history for"),
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> List[HistoryItem]:
     """

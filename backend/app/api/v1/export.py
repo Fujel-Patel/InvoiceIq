@@ -5,6 +5,7 @@ import io
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
+from backend.app.core.database import get_db_service
 from backend.app.models.invoice import ExportRequest, ExtractedInvoice
 from backend.app.services.db import DatabaseService
 from backend.app.utils.auth import get_current_user
@@ -63,7 +64,7 @@ def _extract_to_excel(data: ExtractedInvoice) -> bytes:
 @router.post("/export")
 async def export_data(
     export_request: ExportRequest,
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ):
     """

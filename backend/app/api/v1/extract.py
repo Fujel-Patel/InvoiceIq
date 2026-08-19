@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status as status_code
 
 from backend.app.core.config import settings
+from backend.app.core.database import get_db_service
 from backend.app.models.invoice import ExtractedInvoice
 from backend.app.schemas.extraction import ExtractionResponse
 from backend.app.services.file_handler import FileHandler, validate_file, convert_to_base64, get_media_type
@@ -29,7 +30,7 @@ def get_user_id(current_user: dict) -> str:
 @router.post("/extract/direct-bill", status_code=status_code.HTTP_201_CREATED)
 async def create_direct_bill(
     invoice: ExtractedInvoice,
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> ExtractionResponse:
     """
@@ -78,7 +79,7 @@ async def upload_and_extract(
     file: UploadFile = File(...),
     file_handler: FileHandler = Depends(FileHandler),
     claude_service: ClaudeService = Depends(),
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> ExtractionResponse:
     """
@@ -175,7 +176,7 @@ async def upload_and_extract(
 @router.get("/extract/{extraction_id}")
 async def get_extraction(
     extraction_id: str,
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> ExtractionResponse:
     """
@@ -223,7 +224,7 @@ async def get_extraction(
 async def update_extraction(
     extraction_id: str,
     updated_data: ExtractedInvoice,
-    db_service: DatabaseService = Depends(),
+    db_service: DatabaseService = Depends(get_db_service),
     current_user: dict = Depends(get_current_user),
 ) -> ExtractionResponse:
     """

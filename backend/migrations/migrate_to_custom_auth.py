@@ -21,9 +21,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from sqlalchemy import create_engine, text, Column, String, DateTime, ForeignKey, Index
-from sqlalchemy.dialects.postgresql import UUID, INET
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from backend.app.core.config import settings
 from backend.app.core.database import Base
 from backend.app.models.user import User

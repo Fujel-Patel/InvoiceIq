@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 import sys
 import uuid
-from datetime import datetime, timezone
 
 # Add repo root to path
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,10 +19,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from backend.app.core.config import settings
 from backend.app.models.user import User
-from backend.app.models.refresh_token import RefreshToken
 from backend.app.models.extraction import Extraction
 from backend.app.services.auth_service import signup, login, get_current_user, logout
-from backend.app.services.token_service import create_access_token, create_refresh_token, store_refresh_token, validate_refresh_token, rotate_refresh_token
+from backend.app.services.token_service import create_access_token, store_refresh_token, validate_refresh_token, rotate_refresh_token
 from backend.app.services.password_service import hash_password, verify_password
 
 
@@ -115,7 +113,7 @@ def test_auth_flow(session) -> bool:
             
             # Login
             tokens = await login(session, test_email, test_password)
-            print(f"✓ Login works: tokens received")
+            print("✓ Login works: tokens received")
             
             # Get current user
             current = await get_current_user(session, tokens.access_token)
@@ -138,7 +136,6 @@ def test_token_rotation(session) -> bool:
     """Test refresh token rotation."""
     try:
         import asyncio
-        import hashlib
         
         async def run_test():
             test_email = f"rotate_{uuid.uuid4().hex[:8]}@example.com"
