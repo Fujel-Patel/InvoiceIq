@@ -12,12 +12,13 @@ import {
   Menu,
   X,
   LogOut,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabaseClient";
 import ThemeToggle from "./ThemeToggle";
 import { logout } from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface NavItem {
   href: string;
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout: logoutUser } = useAuthStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -49,9 +51,10 @@ export function Header() {
   const handleSignOut = async () => {
     try {
       await logout();
-      await supabase.auth.signOut();
+      logoutUser();
       router.replace("/login");
     } catch {
+      logoutUser();
       router.replace("/login");
     } finally {
       setIsMenuOpen(false);
@@ -111,15 +114,22 @@ export function Header() {
             </Link>
           ))}
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="Sign out"
-            onClick={handleSignOut}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            {user && (
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                {user.email}
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Sign out"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Menu Button - hidden on desktop */}
@@ -167,6 +177,11 @@ export function Header() {
               <div className="flex items-center gap-2 px-3 py-2">
                 <ThemeToggle />
               </div>
+              {user && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {user.email}
+                </div>
+              )}
               <hr className="my-2 border-border/50" />
               <button
                 role="menuitem"

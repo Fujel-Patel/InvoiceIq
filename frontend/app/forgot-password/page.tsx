@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/AuthLayout";
-import { forgotPassword } from "@/lib/api";
-import { getAuthErrorMessage } from "@/lib/authErrors";
+import { forgotPassword, getApiErrorMessage } from "@/lib/api";
 import { isValidEmail } from "@/lib/validation";
 
 export default function ForgotPasswordPage() {
@@ -33,7 +32,7 @@ export default function ForgotPasswordPage() {
       setSubmitted(true);
       toast.success("Password reset link sent. Please check your email.");
     } catch (submitError) {
-      toast.error(getAuthErrorMessage(submitError));
+      toast.error(getApiErrorMessage(submitError));
     } finally {
       setLoading(false);
     }

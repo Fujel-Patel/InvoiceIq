@@ -6,7 +6,7 @@ from loguru import logger
 from supabase import create_client, Client
 from ..core.config import settings
 from ..models.invoice import ExtractedInvoice
-from ..models.llm_config import LLMConfigCreate
+from ..schemas.llm_config import LLMConfigCreate
 
 # In-memory fallback store for dev mode when Supabase is unavailable
 _fallback_extractions: Dict[str, Dict[str, Any]] = {}

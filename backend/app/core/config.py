@@ -14,12 +14,19 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str = Field(..., env="SECRET_KEY")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
     IS_DEVELOPMENT: bool = Field(default=True, env="IS_DEVELOPMENT")
+
+    # JWT Authentication
+    JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
+    JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
+    BCRYPT_ROUNDS: int = Field(default=12, env="BCRYPT_ROUNDS")
 
     # Auth
     # When True, new accounts must confirm their email before they can sign in.
     EMAIL_CONFIRMATION_REQUIRED: bool = Field(default=False, env="EMAIL_CONFIRMATION_REQUIRED")
+    FRONTEND_URL: str = Field(default="http://localhost:3000", env="FRONTEND_URL")
 
     # LLM Provider Settings
     # Anthropic (Claude)
@@ -49,11 +56,11 @@ class Settings(BaseSettings):
     DEFAULT_LLM_MODEL: str = Field(default="gemini-1.5-pro-latest", env="DEFAULT_LLM_MODEL")
     DEFAULT_LLM_API_KEY: str = Field(default="", env="DEFAULT_LLM_API_KEY")
 
-    # Supabase
-    SUPABASE_URL: str = Field(..., env="SUPABASE_URL")
-    SUPABASE_KEY: str = Field(..., env="SUPABASE_KEY")  # Using anon key for client-side operations
-    SUPABASE_SERVICE_ROLE_KEY: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
-    SUPABASE_JWT_SECRET: str = Field(..., env="SUPABASE_JWT_SECRET")
+    # Supabase (legacy - for migration period)
+    SUPABASE_URL: Optional[str] = Field(default=None, env="SUPABASE_URL")
+    SUPABASE_KEY: Optional[str] = Field(default=None, env="SUPABASE_KEY")
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = Field(default=None, env="SUPABASE_SERVICE_ROLE_KEY")
+    SUPABASE_JWT_SECRET: Optional[str] = Field(default=None, env="SUPABASE_JWT_SECRET")
 
     # CORS
     CORS_ORIGINS: List[str] = Field(

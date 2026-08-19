@@ -4,7 +4,7 @@ import openai
 from google import genai
 from groq import Groq
 from fastapi import HTTPException
-from backend.app.models.llm_config import LLMProvider, VerifyLLMRequest, VerifyLLMResponse
+from backend.app.schemas.llm_config import LLMProvider, VerifyLLMRequest, VerifyLLMResponse
 
 async def verify_llm_config(request: VerifyLLMRequest) -> VerifyLLMResponse:
     try:

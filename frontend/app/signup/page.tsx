@@ -12,9 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/AuthLayout";
 import PasswordStrength from "@/components/PasswordStrength";
-import { getApiFieldErrors, signup } from "@/lib/api";
-import { getAuthErrorMessage } from "@/lib/authErrors";
-import { isPasswordValid, isValidEmail } from "@/lib/validation";
+import { signup, getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
+import { isValidEmail } from "@/lib/validation";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface FormErrors {
   email?: string;
@@ -24,6 +24,7 @@ interface FormErrors {
 
 export default function SignupPage() {
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,8 +39,17 @@ export default function SignupPage() {
 
     const nextErrors: FormErrors = {};
     if (!isValidEmail(email)) nextErrors.email = "Please enter a valid email address.";
-    if (!isPasswordValid(password)) {
-      nextErrors.password = "Password does not meet all the requirements below.";
+    if (password.length < 8) {
+      nextErrors.password = "Password must be at least 8 characters.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      nextErrors.password = (nextErrors.password || "") + " Must contain an uppercase letter.";
+    }
+    if (!/[a-z]/.test(password)) {
+      nextErrors.password = (nextErrors.password || "") + " Must contain a lowercase letter.";
+    }
+    if (!/[0-9]/.test(password)) {
+      nextErrors.password = (nextErrors.password || "") + " Must contain a number.";
     }
     if (confirmPassword !== password) nextErrors.confirmPassword = "Passwords do not match.";
     if (!acceptedTerms) {
@@ -52,8 +62,13 @@ export default function SignupPage() {
     setLoading(true);
     try {
       const data = await signup(email.trim().toLowerCase(), password);
+      setUser({
+        id: data.user_id,
+        email: data.email,
+        emailConfirmed: data.email_confirmed,
+      });
       toast.success(data.message);
-      router.replace("/login");
+      router.replace("/");
     } catch (error) {
       const fieldErrors = getApiFieldErrors(error);
       if (fieldErrors.length > 0) {
@@ -68,7 +83,7 @@ export default function SignupPage() {
           return;
         }
       }
-      toast.error(getAuthErrorMessage(error));
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }

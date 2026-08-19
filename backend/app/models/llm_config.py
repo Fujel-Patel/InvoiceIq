@@ -1,63 +1,39 @@
 from __future__ import annotations
 
-from datetime import datetime
-from enum import Enum
-from typing import Optional
-from pydantic import BaseModel, Field
+import uuid
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+from sqlalchemy import String, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from backend.app.core.database import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
-class LLMProvider(str, Enum):
-    ANTHROPIC = "anthropic"
-    OPENAI = "openai"
-    GOOGLE = "google"
-    GROQ = "groq"
+class LLMConfig(Base):
+    __tablename__ = "llm_configs"
 
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    api_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
 
-class LLMConfigBase(BaseModel):
-    provider: LLMProvider = Field(..., description="LLM provider")
-    api_key: str = Field(..., description="API key for the provider")
-    model: str = Field(..., description="Model name to use")
+    user: Mapped["User"] = relationship("User", back_populates="llm_configs")
 
-
-class LLMConfigCreate(LLMConfigBase):
-    pass
-
-
-class LLMConfigUpdate(BaseModel):
-    provider: Optional[LLMProvider] = None
-    api_key: Optional[str] = None
-    model: Optional[str] = None
-
-
-class LLMConfigResponse(BaseModel):
-    provider: LLMProvider
-    model: str
-    is_valid: bool
-    masked_api_key: str
-    user_id: str
-
-
-class VerifyLLMRequest(BaseModel):
-    provider: LLMProvider
-    api_key: str
-    model: str
-
-
-class VerifyLLMResponse(BaseModel):
-    is_valid: bool
-    message: str
-    provider: LLMProvider
-
-
-class LLMConfigInDBBase(LLMConfigBase):
-    id: str
-    user_id: str
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class LLMConfig(LLMConfigInDBBase):
-    pass
+    def __repr__(self) -> str:
+        return f"<LLMConfig(id={self.id}, user_id={self.user_id}, provider={self.provider})>"

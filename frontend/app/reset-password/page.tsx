@@ -10,9 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/AuthLayout";
 import PasswordStrength from "@/components/PasswordStrength";
-import { getApiFieldErrors, resetPassword } from "@/lib/api";
-import { getAuthErrorMessage } from "@/lib/authErrors";
-import { isPasswordValid } from "@/lib/validation";
+import { resetPassword, getApiErrorMessage, getApiFieldErrors } from "@/lib/api";
+import { isValidEmail } from "@/lib/validation";
 
 interface FormErrors {
   password?: string;
@@ -34,8 +33,17 @@ function ResetPasswordForm() {
     event.preventDefault();
 
     const nextErrors: FormErrors = {};
-    if (!isPasswordValid(password)) {
-      nextErrors.password = "Password does not meet all the requirements below.";
+    if (password.length < 8) {
+      nextErrors.password = "Password must be at least 8 characters.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      nextErrors.password = (nextErrors.password || "") + " Must contain an uppercase letter.";
+    }
+    if (!/[a-z]/.test(password)) {
+      nextErrors.password = (nextErrors.password || "") + " Must contain a lowercase letter.";
+    }
+    if (!/[0-9]/.test(password)) {
+      nextErrors.password = (nextErrors.password || "") + " Must contain a number.";
     }
     if (confirmPassword !== password) nextErrors.confirmPassword = "Passwords do not match.";
     if (!token) nextErrors.password = "This reset link is invalid or has expired.";
@@ -59,7 +67,7 @@ function ResetPasswordForm() {
           return;
         }
       }
-      toast.error(getAuthErrorMessage(error));
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }

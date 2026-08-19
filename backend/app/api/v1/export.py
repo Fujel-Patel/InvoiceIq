@@ -2,29 +2,19 @@ from __future__ import annotations
 
 import csv
 import io
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from backend.app.models.invoice import ExportRequest, ExtractedInvoice
 from backend.app.services.db import DatabaseService
+from backend.app.utils.auth import get_current_user
 
 router = APIRouter()
-security = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> str:
-    """Return a user ID.
-
-    In development mode, bypass authentication and return a fixed ID.
-    If credentials are missing (auto_error=False), also return the dev ID.
-    """
-    # Development bypass
-    return "dev-user-id"
-
+def get_user_id(current_user: dict) -> str:
+    """Extract user_id from current_user dict."""
+    return current_user["sub"]
 
 
 def _extract_to_csv(data: ExtractedInvoice) -> str:
@@ -74,7 +64,7 @@ def _extract_to_excel(data: ExtractedInvoice) -> bytes:
 async def export_data(
     export_request: ExportRequest,
     db_service: DatabaseService = Depends(),
-    current_user: str = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Export extraction data as CSV or Excel file.
@@ -82,7 +72,7 @@ async def export_data(
     Args:
         export_request: Contains extraction_ids and format (csv/excel)
         db_service: Service for database operations
-        current_user: ID of the authenticated user
+        current_user: Authenticated user info
 
     Returns:
         StreamingResponse with the file data
@@ -97,6 +87,8 @@ async def export_data(
             detail="Format must be 'csv' or 'excel'"
         )
 
+    user_id = get_user_id(current_user)
+
     # Get all extraction records
     extraction_records = []
     for extraction_id in export_request.extraction_ids:
@@ -108,7 +100,7 @@ async def export_data(
             )
 
         # Check if the extraction belongs to the current user
-        if extraction_record.get("user_id") != current_user:
+        if extraction_record.get("user_id") != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Not authorized to access extraction with ID {extraction_id}"

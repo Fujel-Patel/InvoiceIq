@@ -11,10 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/AuthLayout";
-import { supabase } from "@/lib/supabaseClient";
 import { login } from "@/lib/api";
-import { getAuthErrorMessage } from "@/lib/authErrors";
+import { getApiErrorMessage } from "@/lib/api";
 import { isValidEmail } from "@/lib/validation";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface FormErrors {
   email?: string;
@@ -24,6 +24,7 @@ interface FormErrors {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const setUser = useAuthStore((state) => state.setUser);
   const redirectedFrom = searchParams?.get("redirectedFrom") || "/";
 
   const [email, setEmail] = useState("");
@@ -45,16 +46,16 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await login(email.trim().toLowerCase(), password);
-      await supabase.auth.setSession({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
+      // Update auth store with user info
+      setUser({
+        id: data.user.id,
+        email: data.user.email,
+        emailConfirmed: true,
       });
-      // Small delay to ensure session cookies are written before redirect
-      await new Promise(resolve => setTimeout(resolve, 300));
       toast.success("Logged in successfully!");
       router.replace(redirectedFrom);
     } catch (error) {
-      toast.error(getAuthErrorMessage(error));
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }

@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from loguru import logger
 from supabase import create_client, Client
 from ..core.config import settings
-from ..models.llm_config import LLMConfigCreate, LLMConfigUpdate
+from ..schemas.llm_config import LLMConfigCreate, LLMConfigUpdate
 
 # In-memory fallback store for dev mode when Supabase is unavailable
 _fallback_llm_configs: Dict[str, Dict[str, Any]] = {}

@@ -5,7 +5,6 @@ import { Sparkles, FileSearch, Zap, Shield, AlertTriangle, FilePlus2, CheckCircl
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getLLMConfig } from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
+import AuthProvider from "@/components/AuthProvider";
 
 interface LLMConfigState {
   provider: string;
@@ -30,50 +31,16 @@ const PROVIDER_LABELS: Record<string, string> = {
   groq: "Groq",
 };
 
-export default function Home() {
-  const [checking, setChecking] = React.useState(true);
+function HomeContent() {
   const [config, setConfig] = React.useState<LLMConfigState | null>(null);
   const router = useRouter();
+  const { isLoading, isAuthenticated, hydrate } = useAuthStore();
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
-    const checkAuth = async () => {
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          const { data } = await supabase.auth.getSession();
-          if (data?.session) {
-            setChecking(false);
-            return;
-          }
-        } catch {
-          // Supabase unreachable — show app anyway
-        }
-        retries--;
-        if (retries > 0) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-      // No session — redirect to login
-      router.replace('/login');
-      setChecking(false);
-    };
-    checkAuth();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: { access_token: string } | null) => {
-      if (!session) {
-        router.replace('/login');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router]);
-
-  React.useEffect(() => {
-    abortControllerRef.current = new AbortController();
-    const controller = abortControllerRef.current;
     const checkConfig = () => {
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
       getLLMConfig(controller.signal)
         .then((cfg) => setConfig(cfg))
         .catch(() => {});
@@ -81,19 +48,25 @@ export default function Home() {
     checkConfig();
     window.addEventListener("focus", checkConfig);
     return () => {
-      controller.abort();
+      abortControllerRef.current?.abort();
       window.removeEventListener("focus", checkConfig);
     };
   }, []);
 
   const hasLLMConfig = config !== null;
 
-  if (checking) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    // This shouldn't happen due to middleware, but just in case
+    router.replace('/login');
+    return null;
   }
 
   return (
@@ -233,5 +206,13 @@ export default function Home() {
         InvoiceIQ © 2026
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <AuthProvider>
+      <HomeContent />
+    </AuthProvider>
   );
 }

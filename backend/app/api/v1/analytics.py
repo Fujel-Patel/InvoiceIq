@@ -10,21 +10,27 @@ from backend.app.utils.auth import get_current_user
 router = APIRouter()
 
 
+def get_user_id(current_user: dict) -> str:
+    """Extract user_id from current_user dict."""
+    return current_user["sub"]
+
+
 @router.get("/analytics", response_model=AnalyticsResponse)
 async def get_analytics(
     db_service: DatabaseService = Depends(),
-    current_user: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ) -> AnalyticsResponse:
     """
     Get aggregated analytics across all of a user's invoices.
 
     Args:
         db_service: Service for database operations
-        current_user: ID of the authenticated user
+        current_user: Authenticated user info
 
     Returns:
         AnalyticsResponse with debit/credit totals, monthly/weekly breakdowns,
         vendor summaries, and the full list of bills
     """
-    records = await db_service.get_user_history(current_user)
+    user_id = get_user_id(current_user)
+    records = await db_service.get_user_history(user_id)
     return build_analytics(records)

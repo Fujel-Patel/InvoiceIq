@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { supabase } from "./supabaseClient";
 
 // Interfaces
 export interface LineItem {
@@ -124,39 +123,78 @@ export interface VerifyLLMResponse {
   provider: string;
 }
 
-// Axios Instance
+// Axios Instance with cookie-based auth
 const api = axios.create({
   baseURL:
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     (process.env.NODE_ENV === 'production'
       ? 'https://invoiceiq-7wec.onrender.com/api/v1'
       : 'http://localhost:8765/api/v1'),
+  withCredentials: true, // Critical: sends cookies automatically
 });
 
-api.interceptors.request.use(async (config) => {
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    const token = session?.session?.access_token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (reason: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
-  } catch {
-    // Supabase unreachable — backend uses dev auth bypass
-  }
-  return config;
-});
+  });
+  failedQueue = [];
+};
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
-      // Clear any stored dev session and redirect to login
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('invoiceiq-dev-session')
-        window.location.href = '/login'
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (axios.isAxiosError(error) && error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Wait for the token refresh to complete
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => api(originalRequest))
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8765/api/v1";
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          throw new Error('Token refresh failed');
+        }
+
+        processQueue(null);
+        return api(originalRequest);
+      } catch (err) {
+        processQueue(err, null);
+        // Clear auth state and redirect to login
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage');
+          window.location.href = '/login';
+        }
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
       }
     }
-    return Promise.reject(error)
+
+    return Promise.reject(error);
   }
 );
 
