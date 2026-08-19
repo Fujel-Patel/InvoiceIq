@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: Optional[str] = Field(default=None, env="SUPABASE_SERVICE_ROLE_KEY")
     SUPABASE_JWT_SECRET: Optional[str] = Field(default=None, env="SUPABASE_JWT_SECRET")
 
+    # Database
+    DATABASE_URL: Optional[str] = Field(default=None, env="DATABASE_URL")
+
     # CORS
     CORS_ORIGINS: List[str] = Field(
         default=["http://localhost:3000", "http://localhost:3001"],

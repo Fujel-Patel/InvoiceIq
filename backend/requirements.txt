@@ -43,7 +43,6 @@ filelock==3.29.3
 fire==0.7.1
 fonttools==4.63.0
 fpdf2==2.8.7
--e git+https://github.com/Fujel-Patel/Resume-Builder.git@7ddb3c5aca138040df867011e35ef29cd9aa1cba#egg=generative_cv_backend&subdirectory=backend
 google-generativeai==0.8.6
 google-genai==0.3.0
 google-auth==2.56.0
@@ -91,7 +90,7 @@ pathspec==1.1.1
 pdf2docx==0.5.13
 pdfminer.six==20251230
 pdfplumber==0.11.9
-pillow==12.2.0
+pillow>=10.0.0,<12.0.0
 platformdirs==4.10.0
 playwright==1.60.0
 pluggy==1.6.0
