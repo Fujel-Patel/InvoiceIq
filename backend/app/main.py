@@ -28,9 +28,15 @@ app = FastAPI(
 )
 
 # Set up CORS middleware
+# When allow_credentials=True, allow_origins cannot be ["*"] - must be explicit origins
+cors_origins = settings.CORS_ORIGINS.copy()
+# Ensure the FRONTEND_URL is always allowed for credentials mode
+if settings.FRONTEND_URL and settings.FRONTEND_URL not in cors_origins:
+    cors_origins.append(settings.FRONTEND_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
     allow_origin_regex=settings.CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
