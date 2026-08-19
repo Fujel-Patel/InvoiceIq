@@ -49,7 +49,7 @@ export default function LoginPage() {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
       });
-      // Small delay to ensure session is persisted before redirect
+      // Small delay to ensure session cookies are written before redirect
       await new Promise(resolve => setTimeout(resolve, 300));
       toast.success("Logged in successfully!");
       router.replace(redirectedFrom);
