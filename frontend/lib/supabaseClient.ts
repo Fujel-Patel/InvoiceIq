@@ -10,6 +10,8 @@ interface DevSession {
   user: { id: string; email: string }
 }
 
+const DEV_SESSION_KEY = 'invoiceiq-dev-session'
+
 function decodeJwtUser(token: string): { id: string; email: string } {
   try {
     const base64Url = token.split('.')[1]
@@ -24,10 +26,35 @@ function decodeJwtUser(token: string): { id: string; email: string } {
   }
 }
 
+function loadDevSession(): DevSession | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem(DEV_SESSION_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (parsed.access_token && parsed.user) {
+        return parsed as DevSession
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null
+}
+
+function saveDevSession(session: DevSession | null) {
+  if (typeof window === 'undefined') return
+  if (session) {
+    localStorage.setItem(DEV_SESSION_KEY, JSON.stringify(session))
+  } else {
+    localStorage.removeItem(DEV_SESSION_KEY)
+  }
+}
+
 function createDevClient(): ReturnType<typeof createBrowserClient> {
   const noop = () => ({ data: { session: null }, error: null })
   const noopSubscription = { unsubscribe: () => {} }
-  let session: DevSession | null = null
+  let session: DevSession | null = loadDevSession()
   const fakeSession: DevSession = {
     access_token: 'dev-mode-token',
     refresh_token: 'dev-mode-refresh',
@@ -49,18 +76,22 @@ function createDevClient(): ReturnType<typeof createBrowserClient> {
           token_type: 'bearer',
           user,
         }
+        saveDevSession(session)
         return { data: { session, user }, error: null }
       },
       signOut: () => {
         session = null
+        saveDevSession(null)
         return noop()
       },
       signInWithPassword: async () => {
         session = fakeSession
+        saveDevSession(session)
         return { data: { session, user: fakeSession.user }, error: null }
       },
       signUp: async () => {
         session = fakeSession
+        saveDevSession(session)
         return { data: { session, user: fakeSession.user }, error: null }
       },
     },

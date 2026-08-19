@@ -146,6 +146,20 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // Clear any stored dev session and redirect to login
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('invoiceiq-dev-session')
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+);
+
 export function getApiErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const detail = (error.response?.data as { detail?: unknown } | undefined)?.detail;

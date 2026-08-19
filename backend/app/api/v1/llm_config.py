@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from backend.app.services.llm_config_service import LLMConfigService
 from backend.app.services.llm_verification_service import verify_llm_config
 from backend.app.models.llm_config import (
@@ -11,21 +10,10 @@ from backend.app.models.llm_config import (
     VerifyLLMRequest,
     VerifyLLMResponse
 )
+from backend.app.utils.auth import get_current_user
 from typing import Optional
 
 router = APIRouter()
-security = HTTPBearer(auto_error=False)
-
-
-async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> str:
-    """Return a user ID.
-
-    In development mode, bypass authentication and return a static ID.
-    Missing credentials (auto_error=False) also return the dev ID.
-    """
-    return "dev-user-id"
 
 
 def mask_api_key(api_key: str) -> str:
@@ -127,11 +115,11 @@ async def update_llm_config(
         )
 
 
-@router.delete("/llm/config", response_model=dict)
+@router.delete("/llm/config", response_model=dict[str, str])
 async def delete_llm_config(
     llm_config_service: LLMConfigService = Depends(),
     current_user: str = Depends(get_current_user)
-) -> dict:
+) -> dict[str, str]:
     """Delete LLM configuration for the current user."""
     try:
         existing_config = await llm_config_service.get_llm_config_by_user_id(current_user)
