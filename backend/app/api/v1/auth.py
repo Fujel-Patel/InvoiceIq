@@ -151,9 +151,12 @@ async def refresh_endpoint(
     """Rotate refresh token and issue new access token."""
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
-        # Try to get from body as fallback
-        body = await request.json()
-        refresh_token = body.get("refresh_token")
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                refresh_token = body.get("refresh_token")
+        except Exception:
+            pass
 
     if not refresh_token:
         raise HTTPException(

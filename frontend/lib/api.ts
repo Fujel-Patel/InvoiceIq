@@ -156,6 +156,11 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (axios.isAxiosError(error) && error.response?.status === 401 && !originalRequest._retry) {
+      const url = originalRequest.url || "";
+      if (url.includes("/auth/login") || url.includes("/auth/signup") || url.includes("/auth/forgot-password") || url.includes("/auth/reset-password")) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // Wait for the token refresh to complete
         return new Promise((resolve, reject) => {
@@ -363,8 +368,11 @@ export interface SignupResponse {
 }
 
 export interface MeResponse {
-  user_id: string;
-  email: string | null;
+  user: {
+    id: string;
+    email: string;
+    email_confirmed: boolean;
+  };
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {

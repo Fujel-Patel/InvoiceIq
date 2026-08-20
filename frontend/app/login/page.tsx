@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/AuthLayout";
-import { login } from "@/lib/api";
+import { login, getMe } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api";
 import { isValidEmail } from "@/lib/validation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -45,12 +45,12 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const data = await login(email.trim().toLowerCase(), password);
-      // Update auth store with user info
+      await login(email.trim().toLowerCase(), password);
+      const me = await getMe();
       setUser({
-        id: data.user.id,
-        email: data.user.email,
-        emailConfirmed: true,
+        id: me.user.id,
+        email: me.user.email,
+        emailConfirmed: me.user.email_confirmed,
       });
       toast.success("Logged in successfully!");
       router.replace(redirectedFrom);
