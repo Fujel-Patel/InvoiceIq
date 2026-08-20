@@ -204,7 +204,24 @@ async def get_current_user_dependency(
     token: Optional[str] = Depends(get_token_from_request)
 ) -> dict:
     """Wrapper dependency for get_current_user to avoid FastAPI response model issues."""
-    return await get_current_user(request, db, token)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = await get_current_user(db, token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {
+        "sub": str(user.id),
+        "email": user.email,
+        "email_confirmed": user.email_confirmed,
+    }
 
 
 @router.post("/auth/logout-all", response_model=MessageResponse)
