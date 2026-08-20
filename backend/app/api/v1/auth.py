@@ -37,14 +37,16 @@ security = HTTPBearer(auto_error=False)
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
     """Set HttpOnly cookies for access and refresh tokens."""
+    secure = not settings.IS_DEVELOPMENT
+    samesite = "none" if secure else "lax"
     # Access token cookie (15 minutes)
     response.set_cookie(
         key="access_token",
         value=access_token,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         httponly=True,
-        secure=not settings.IS_DEVELOPMENT,
-        samesite="lax",
+        secure=secure,
+        samesite=samesite,
         path="/",
     )
     # Refresh token cookie (7 days)
@@ -53,16 +55,18 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str) 
         value=refresh_token,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         httponly=True,
-        secure=not settings.IS_DEVELOPMENT,
-        samesite="lax",
+        secure=secure,
+        samesite=samesite,
         path="/",
     )
 
 
 def clear_auth_cookies(response: Response) -> None:
     """Clear auth cookies."""
-    response.delete_cookie(key="access_token", path="/", httponly=True, secure=not settings.IS_DEVELOPMENT, samesite="lax")
-    response.delete_cookie(key="refresh_token", path="/", httponly=True, secure=not settings.IS_DEVELOPMENT, samesite="lax")
+    secure = not settings.IS_DEVELOPMENT
+    samesite = "none" if secure else "lax"
+    response.delete_cookie(key="access_token", path="/", httponly=True, secure=secure, samesite=samesite)
+    response.delete_cookie(key="refresh_token", path="/", httponly=True, secure=secure, samesite=samesite)
 
 
 async def get_token_from_request(
