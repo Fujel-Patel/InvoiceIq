@@ -58,7 +58,7 @@ class DatabaseService:
 
         extraction = Extraction(
             id=uuid_mod.UUID(extraction_id) if isinstance(extraction_id, str) else extraction_id,
-            user_id=uuid_mod.UUID(user_id) if isinstance(user_id, str) else user_id,
+            user_id=user_id,
             filename=filename,
             status=status,
             vendor_name=data.vendor_name,
@@ -181,10 +181,9 @@ class DatabaseService:
         if not self.db:
             raise RuntimeError("Database session not provided")
 
-        user_uuid = uuid_mod.UUID(user_id) if isinstance(user_id, str) else user_id
         result = await self.db.execute(
             select(Extraction)
-            .where(Extraction.user_id == user_uuid)
+            .where(Extraction.user_id == user_id)
             .order_by(desc(Extraction.created_at))
         )
         extractions = result.scalars().all()

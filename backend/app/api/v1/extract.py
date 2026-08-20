@@ -4,6 +4,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status as status_code
+from loguru import logger
 
 from backend.app.core.config import settings
 from backend.app.core.database import get_db_service
@@ -68,6 +69,7 @@ async def create_direct_bill(
             raw_text=None,
         )
     except Exception as e:
+        logger.error(f"Direct bill creation failed: {type(e).__name__}: {e}")
         raise HTTPException(
             status_code=status_code.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred during processing: {str(e)}",
