@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 const providers = [
   { value: "anthropic", label: "Anthropic (Claude)" },
   { value: "openai", label: "OpenAI" },
-  { value: "gemini", label: "Google Gemini" },
+  { value: "google", label: "Google Gemini" },
   { value: "groq", label: "Groq" },
   { value: "openrouter", label: "OpenRouter" },
 ];
@@ -33,11 +33,15 @@ export default function LLMConfigPage() {
   // Load existing config on mount
   useEffect(() => {
     const fetchConfig = async () => {
-      const cfg = await getLLMConfig();
-      if (cfg) {
-        setProvider(cfg.provider ?? "anthropic");
-        setApiKey(cfg.masked_api_key ?? "");
-        setModel(cfg.model ?? "");
+      try {
+        const cfg = await getLLMConfig();
+        if (cfg) {
+          setProvider(cfg.provider ?? "anthropic");
+          setApiKey(cfg.masked_api_key ?? "");
+          setModel(cfg.model ?? "");
+        }
+      } catch {
+        toast.error("Failed to load LLM configuration");
       }
     };
     fetchConfig();

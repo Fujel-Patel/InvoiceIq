@@ -1,37 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter, usePathname } from "next/navigation";
+
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"];
+
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+}
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { hydrate, isLoading, isAuthenticated, user } = useAuthStore();
+  const { hydrate, isLoading, isAuthenticated } = useAuthStore();
+  const initRef = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
+    if (initRef.current) return;
+    initRef.current = true;
 
     const initAuth = async () => {
       await hydrate();
-
-      if (!mounted) return;
-
-      // If we're on login/signup pages and user is authenticated, redirect to home
-      const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password'];
-      const isPublicPath = publicPaths.some((path) => pathname.startsWith(path));
-
-      if (isPublicPath && isAuthenticated) {
-        router.replace('/');
-      }
     };
 
     initAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, [hydrate, isAuthenticated, pathname, router]);
+  }, [hydrate]);
 
   // Show loading state while hydrating
   if (isLoading) {
@@ -40,6 +34,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
+  }
+
+  // Authenticated user on a public page → redirect to home
+  if (isPublicPath(pathname) && isAuthenticated) {
+    router.replace("/");
+    return null;
+  }
+
+  // Unauthenticated user on a protected page → redirect to login
+  if (!isPublicPath(pathname) && !isAuthenticated) {
+    const loginUrl = new URL("/login", window.location.origin);
+    loginUrl.searchParams.set("redirectedFrom", pathname);
+    router.replace(loginUrl.toString());
+    return null;
   }
 
   return <>{children}</>;

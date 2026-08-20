@@ -2,7 +2,6 @@
 
 import { useQuery, QueryClient, QueryClientProvider, useIsFetching } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { getHistory } from "@/lib/api";
 import HistoryList from "@/components/HistoryList";
@@ -14,7 +13,6 @@ import { Header } from "@/components/Header";
 const queryClient = new QueryClient();
 
 function HistoryContent() {
-  const router = useRouter();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["history"],
     queryFn: () => getHistory(),

@@ -8,14 +8,12 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "sonner";
 import UploadActions from "@/components/UploadActions";
 import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getLLMConfig } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
-import AuthProvider from "@/components/AuthProvider";
 
 interface LLMConfigState {
   provider: string;
@@ -34,7 +32,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 function HomeContent() {
   const [config, setConfig] = React.useState<LLMConfigState | null>(null);
   const router = useRouter();
-  const { isLoading, isAuthenticated, hydrate } = useAuthStore();
+  const { isLoading } = useAuthStore();
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
@@ -63,17 +61,8 @@ function HomeContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    // This shouldn't happen due to middleware, but just in case
-    router.replace('/login');
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <Toaster position="top-right" richColors />
-
-      {/* Navbar */}
       <Header />
 
       {/* Hero Section */}
@@ -210,9 +199,5 @@ function HomeContent() {
 }
 
 export default function Home() {
-  return (
-    <AuthProvider>
-      <HomeContent />
-    </AuthProvider>
-  );
+  return <HomeContent />;
 }

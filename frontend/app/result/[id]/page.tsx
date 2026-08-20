@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, AlertCircle, RefreshCw, History, Zap } from "lucide-react";
-import { Toaster } from "sonner";
 import Link from "next/link";
 import { getExtraction } from "@/lib/api";
 import DataTable from "@/components/DataTable";
@@ -100,8 +99,6 @@ export default function ResultPage() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-muted/20">
-        <Toaster position="top-right" richColors />
-
         <Header />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">

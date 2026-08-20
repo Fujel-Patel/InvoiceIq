@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 import AnimatedLayout from "@/components/AnimatedLayout";
 import ThemeInitializer from "@/components/ThemeInitializer";
+import AuthProvider from "@/components/AuthProvider";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -41,7 +42,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeInitializer />
-        <AnimatedLayout>{children}</AnimatedLayout>
+        <AuthProvider>
+          <AnimatedLayout>{children}</AnimatedLayout>
+        </AuthProvider>
         <Toaster position="top-right" richColors />
       </body>
     </html>
