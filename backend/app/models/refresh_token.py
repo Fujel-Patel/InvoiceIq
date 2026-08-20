@@ -3,7 +3,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING
-from sqlalchemy import String, DateTime, ForeignKey, Index, Text
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text
+from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.core.database import Base
 
@@ -27,7 +28,7 @@ class RefreshToken(Base):
     )
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(INET, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
 
