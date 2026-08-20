@@ -9,8 +9,6 @@ from backend.app.core.database import Base
 
 if TYPE_CHECKING:
     from .refresh_token import RefreshToken
-    from .extraction import Extraction
-    from .llm_config import LLMConfig
 
 
 class User(Base):
@@ -36,12 +34,6 @@ class User(Base):
 
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         "RefreshToken", back_populates="user", cascade="all, delete-orphan"
-    )
-    extractions: Mapped[list["Extraction"]] = relationship(
-        "Extraction", back_populates="user", cascade="all, delete-orphan"
-    )
-    llm_configs: Mapped[list["LLMConfig"]] = relationship(
-        "LLMConfig", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

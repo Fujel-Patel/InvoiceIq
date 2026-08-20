@@ -2,13 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
-from sqlalchemy import String, DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
 from backend.app.core.database import Base
-
-if TYPE_CHECKING:
-    from .user import User
 
 
 class LLMConfig(Base):
@@ -17,8 +13,8 @@ class LLMConfig(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, default=uuid.uuid4
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    user_id: Mapped[str] = mapped_column(
+        String(255), nullable=False, index=True
     )
     provider: Mapped[str] = mapped_column(String(50), nullable=False)
     api_key: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -32,8 +28,6 @@ class LLMConfig(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False
     )
-
-    user: Mapped["User"] = relationship("User", back_populates="llm_configs")
 
     def __repr__(self) -> str:
         return f"<LLMConfig(id={self.id}, user_id={self.user_id}, provider={self.provider})>"

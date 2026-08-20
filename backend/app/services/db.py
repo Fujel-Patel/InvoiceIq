@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from sqlalchemy import select, desc
@@ -55,11 +56,9 @@ class DatabaseService:
         if not self.db:
             raise RuntimeError("Database session not provided")
 
-        record = self._build_record(extraction_id, filename, user_id, data, status)
-        
         extraction = Extraction(
-            id=extraction_id,
-            user_id=user_id,
+            id=uuid_mod.UUID(extraction_id) if isinstance(extraction_id, str) else extraction_id,
+            user_id=uuid_mod.UUID(user_id) if isinstance(user_id, str) else user_id,
             filename=filename,
             status=status,
             vendor_name=data.vendor_name,
@@ -102,8 +101,9 @@ class DatabaseService:
         if not self.db:
             raise RuntimeError("Database session not provided")
 
+        extraction_uuid = uuid_mod.UUID(extraction_id) if isinstance(extraction_id, str) else extraction_id
         result = await self.db.execute(
-            select(Extraction).where(Extraction.id == extraction_id)
+            select(Extraction).where(Extraction.id == extraction_uuid)
         )
         extraction = result.scalar_one_or_none()
         
@@ -133,8 +133,9 @@ class DatabaseService:
         if not self.db:
             raise RuntimeError("Database session not provided")
 
+        extraction_uuid = uuid_mod.UUID(extraction_id) if isinstance(extraction_id, str) else extraction_id
         result = await self.db.execute(
-            select(Extraction).where(Extraction.id == extraction_id)
+            select(Extraction).where(Extraction.id == extraction_uuid)
         )
         extraction = result.scalar_one_or_none()
         
@@ -180,9 +181,10 @@ class DatabaseService:
         if not self.db:
             raise RuntimeError("Database session not provided")
 
+        user_uuid = uuid_mod.UUID(user_id) if isinstance(user_id, str) else user_id
         result = await self.db.execute(
             select(Extraction)
-            .where(Extraction.user_id == user_id)
+            .where(Extraction.user_id == user_uuid)
             .order_by(desc(Extraction.created_at))
         )
         extractions = result.scalars().all()
